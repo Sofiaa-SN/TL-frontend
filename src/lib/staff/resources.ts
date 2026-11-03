@@ -24,7 +24,7 @@ export type StaffFieldDefinition = {
   defaultValue?: unknown;
   help?: string;
   /** Structured form editor for a JSON field; raw JSON stays available inside it. */
-  editor?: "activity-content" | "experiment";
+  editor?: "activity-content" | "experiment" | "captions";
   options?: FieldOption[];
   relation?: RelationDefinition;
 };
@@ -272,8 +272,9 @@ export const staffResources: Record<string, StaffResourceDefinition> = {
       { key: "transcript", label: "Transcript", type: "textarea" },
       {
         key: "captions",
-        label: "Captions JSON",
+        label: "Captions",
         type: "json",
+        editor: "captions",
         defaultValue: [],
       },
       {

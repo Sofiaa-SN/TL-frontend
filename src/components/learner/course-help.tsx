@@ -8,6 +8,7 @@ import { CourseTutorPanel } from "@/components/learner/course-chatbot";
 import { CourseSupportPanel } from "@/components/learner/course-support-chat";
 import { Button } from "@/components/ui/button";
 import { learnerApi } from "@/lib/learner/api";
+import { publishedVersion } from "@/lib/learner/course";
 import { supportChatApi } from "@/lib/support-chat/api";
 import type { SupportConversation } from "@/lib/support-chat/types";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const TABS: Record<Tab, { label: string; title: string; description: string; ico
 export function CourseHelp({ courseId }: { courseId: string }) {
   const pathname = usePathname() ?? "";
   const [tutorAvailable, setTutorAvailable] = useState(false);
+  const [starters, setStarters] = useState<string[]>([]);
   const [teacherAvailable, setTeacherAvailable] = useState(false);
   const [conversation, setConversation] = useState<SupportConversation | null>(null);
   const [unread, setUnread] = useState(0);
@@ -40,7 +42,13 @@ export function CourseHelp({ courseId }: { courseId: string }) {
   useEffect(() => {
     let active = true;
     learnerApi.course(courseId)
-      .then((course) => active && setTutorAvailable(Boolean(course.chatbot_available)))
+      .then((course) => {
+        if (!active) return;
+        setTutorAvailable(Boolean(course.chatbot_available));
+        // Chapter titles make good first questions: they match the course's approved context.
+        const chapters = (Array.isArray(course.versions) ? publishedVersion(course) : course.published_version)?.chapters ?? [];
+        setStarters([...chapters].sort((a, b) => a.display_order - b.display_order).slice(0, 3).map((chapter) => `Help me understand “${chapter.title}”`));
+      })
       .catch(() => active && setTutorAvailable(false));
     supportChatApi.availability(courseId)
       .then((result) => {
@@ -182,7 +190,7 @@ export function CourseHelp({ courseId }: { courseId: string }) {
           )}
           {tutorAvailable && (
             <div role={single ? undefined : "tabpanel"} id={`${titleId}-tutor-panel`} aria-labelledby={single ? undefined : `${titleId}-tutor-tab`} hidden={currentTab !== "tutor"} className="flex min-h-0 flex-1 flex-col">
-              <CourseTutorPanel courseId={courseId} active={open && currentTab === "tutor"} onUnavailable={onTutorUnavailable} />
+              <CourseTutorPanel courseId={courseId} starters={starters} active={open && currentTab === "tutor"} onUnavailable={onTutorUnavailable} />
             </div>
           )}
         </aside>

@@ -93,7 +93,7 @@ function AccountMenu({ displayName, logout }: { displayName: string; logout: () 
         render={<Button variant="ghost" size="lg" aria-label={`Open account menu for ${displayName}`} />}
       >
         <Avatar size="sm"><AvatarFallback className="bg-brand-indigo-soft text-xs font-semibold text-primary">{initials(displayName)}</AvatarFallback></Avatar>
-        <span className="hidden max-w-36 truncate sm:inline">{displayName}</span>
+        <span className="hidden max-w-36 truncate lg:inline">{displayName}</span>
         <ChevronDown data-icon="inline-end" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="w-56">
@@ -136,7 +136,7 @@ export function LearnerShell({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
       <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-8 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:gap-8 lg:px-8">
           <LearnerBrand />
           <DesktopNavigation />
           <div className="ml-auto flex items-center gap-1">

@@ -205,7 +205,7 @@ export function CourseSupportPanel({ courseId, available, initialConversation, a
   return (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex items-center gap-2 border-b px-4 py-2.5 text-xs text-muted-foreground">
-            <span className="min-w-0 flex-1">Shared with the staff who teach this course.</span>
+            <span className="min-w-0 flex-1">Saved here, so you can come back to it anytime.</span>
             <Badge variant={connection === "live" ? "secondary" : "outline"}>{connectionCopy[connection]}</Badge>
             {connection === "offline" && <Button type="button" size="xs" variant="outline" onClick={() => socketRef.current?.reconnect()}>Reconnect</Button>}
           </div>

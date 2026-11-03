@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bot, Save } from "lucide-react";
+import { Bot, Save, Sparkles } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, curriculumApi } from "@/lib/curriculum/api";
+import { buildApprovedContext } from "@/lib/curriculum/chatbot-context";
 import type { CourseChatbotConfig, CourseVersion } from "@/lib/curriculum/types";
 
 const CONTEXT_LIMIT = 24_000;
+// Below this, most learner questions will not match any approved passage.
+const THIN_CONTEXT = 1_500;
 
 export function CourseChatbotPanel({ version, canManage }: { version: CourseVersion; canManage: boolean }) {
   const [record, setRecord] = useState<CourseChatbotConfig | null>(null);
@@ -39,6 +42,17 @@ export function CourseChatbotPanel({ version, canManage }: { version: CourseVers
   }, [canManage, version.id]);
 
   if (!canManage) return null;
+
+  function draftFromCourse() {
+    const draft = buildApprovedContext(version).slice(0, CONTEXT_LIMIT);
+    if (!draft) {
+      setError("This version has no chapters or lessons to draft from yet.");
+      return;
+    }
+    setContext(context.trim() ? `${context.trim()}\n\n${draft}`.slice(0, CONTEXT_LIMIT) : draft);
+    setError("");
+    setNotice("Drafted from this version’s chapters, lessons and activities. Review it, then save.");
+  }
 
   async function save() {
     const approvedContext = context.trim();
@@ -87,7 +101,15 @@ export function CourseChatbotPanel({ version, canManage }: { version: CourseVers
         </label>
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-4"><Label htmlFor={`chatbot-context-${version.id}`}>Approved context</Label><span className="text-xs tabular-nums text-muted-foreground">{context.length.toLocaleString()} / {CONTEXT_LIMIT.toLocaleString()}</span></div>
-          <Textarea id={`chatbot-context-${version.id}`} value={context} onChange={(event) => setContext(event.target.value)} rows={12} maxLength={CONTEXT_LIMIT + 1} placeholder="Paste only the material that the tutor is allowed to use…" />
+          <Textarea id={`chatbot-context-${version.id}`} value={context} onChange={(event) => setContext(event.target.value)} rows={12} maxLength={CONTEXT_LIMIT + 1} placeholder="Paste only the material that the tutor is allowed to use…" aria-describedby={`chatbot-context-help-${version.id}`} />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p id={`chatbot-context-help-${version.id}`} className={context.trim().length < THIN_CONTEXT ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+              {context.trim().length < THIN_CONTEXT
+                ? "This is very little material, so the tutor will decline most questions. Add lesson notes, key definitions and worked examples."
+                : "The tutor answers only from this text and quotes it as evidence."}
+            </p>
+            <Button type="button" variant="outline" size="sm" onClick={draftFromCourse}><Sparkles data-icon="inline-start" />Build from course content</Button>
+          </div>
         </div>
         {record && <p className="text-xs text-muted-foreground">Context revision {record.context_revision} · Last saved {new Date(record.updated_at).toLocaleString()}</p>}
         <div className="flex justify-end"><Button type="button" onClick={() => void save()} disabled={saving}><Save data-icon="inline-start" />{saving ? "Saving…" : "Save chatbot settings"}</Button></div>

@@ -104,4 +104,16 @@ describe("Course tutor", () => {
     await userEvent.click(screen.getByRole("button", { name: "Close help" }));
     expect(await screen.findByRole("button", { name: "Ask course tutor" })).toBeDefined();
   });
+
+  it("suggests questions from the course's chapter titles", async () => {
+    api.course.mockResolvedValueOnce({
+      id: "course-1",
+      chatbot_available: true,
+      versions: [{ id: "v1", status: "PUBLISHED", chapters: [{ id: "ch2", title: "Break-even analysis", display_order: 2 }, { id: "ch1", title: "Cost behaviour", display_order: 1 }] }],
+    });
+    render(<CourseHelp courseId="course-1" />);
+    await openTutor();
+    const suggestions = screen.getAllByRole("button", { name: /^Help me understand/ }).map((button) => button.textContent);
+    expect(suggestions).toEqual(["Help me understand “Cost behaviour”", "Help me understand “Break-even analysis”"]);
+  });
 });

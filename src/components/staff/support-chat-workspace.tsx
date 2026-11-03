@@ -281,8 +281,8 @@ export function SupportChatWorkspace() {
   const filtering = Boolean(query.trim()) || status !== "ALL" || course !== "ALL" || group !== "ALL";
 
   return (
-    <main className="flex h-[calc(100vh-3.5rem)] min-h-[36rem] flex-col overflow-hidden">
-      <header className="flex items-center gap-4 border-b bg-background px-4 py-3 md:px-6">
+    <main className="flex h-[calc(100dvh-3.5rem)] min-h-[22rem] flex-col overflow-hidden">
+      <header className={cn("items-center gap-4 border-b bg-background px-4 py-3 md:flex md:px-6", selectedId ? "hidden" : "flex")}>
         <div>
           <h1 className="font-heading text-xl font-semibold">Course support</h1>
           <p className="text-sm text-muted-foreground">Questions from learners in the courses you support.</p>

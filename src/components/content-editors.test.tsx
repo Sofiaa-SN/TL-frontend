@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ActivityContentEditor, ExperimentConfigEditor } from "./content-editors";
+import { ActivityContentEditor, CaptionsEditor, ExperimentConfigEditor } from "./content-editors";
 import type { JsonObject } from "@/lib/structured-json";
 import { chooseOption } from "@/test/choose-option";
 
@@ -56,5 +56,39 @@ describe("ExperimentConfigEditor", () => {
       renderer_config: { material_id: "abc123" },
       response_fields: [{ key: "optimal_mix", label: "Optimal mix", type: "textarea" }],
     });
+  });
+});
+
+describe("CaptionsEditor", () => {
+  function CaptionHarness({ onChange }: { onChange: (cues: unknown) => void }) {
+    const [cues, setCues] = useState<unknown>([]);
+    return <CaptionsEditor value={cues} onChange={(next) => { setCues(next); onChange(next); }} />;
+  }
+
+  it("imports pasted WebVTT and edits a cue time", async () => {
+    const onChange = vi.fn();
+    render(<CaptionHarness onChange={onChange} />);
+    await userEvent.click(screen.getByRole("button", { name: "Paste captions" }));
+    await userEvent.type(screen.getByLabelText("Paste WebVTT or SRT text"), "WEBVTT{Enter}{Enter}00:00:00.000 --> 00:00:02.000{Enter}Hello");
+    await userEvent.click(screen.getByRole("button", { name: "Import pasted captions" }));
+    expect(onChange).toHaveBeenLastCalledWith([{ start: 0, end: 2, text: "Hello" }]);
+    const end = screen.getByLabelText("Cue 1 end");
+    await userEvent.clear(end);
+    await userEvent.type(end, "0:03.5");
+    await userEvent.tab();
+    expect(onChange).toHaveBeenLastCalledWith([{ start: 0, end: 3.5, text: "Hello" }]);
+  });
+
+  it("flags an unreadable time without changing the cue", async () => {
+    const onChange = vi.fn();
+    render(<CaptionHarness onChange={onChange} />);
+    await userEvent.click(screen.getByRole("button", { name: "Add cue" }));
+    const start = screen.getByLabelText("Cue 1 start");
+    await userEvent.clear(start);
+    await userEvent.type(start, "soon");
+    await userEvent.tab();
+    expect(start.getAttribute("aria-invalid")).toBe("true");
+    expect(onChange).toHaveBeenLastCalledWith([{ start: 0, end: 3, text: "" }]);
+    expect(screen.getByRole("alert").textContent).toContain("needs caption text");
   });
 });

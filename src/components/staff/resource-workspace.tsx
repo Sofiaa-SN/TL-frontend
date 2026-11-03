@@ -78,7 +78,7 @@ import {
   type StaffFieldDefinition,
   type StaffResourceDefinition,
 } from "@/lib/staff/resources";
-import { ActivityContentEditor, ExperimentConfigEditor } from "@/components/content-editors";
+import { ActivityContentEditor, CaptionsEditor, ExperimentConfigEditor } from "@/components/content-editors";
 import { isJsonObject, type JsonObject } from "@/lib/structured-json";
 
 type FormValues = Record<string, unknown>;
@@ -355,6 +355,17 @@ function ResourceField({
         <FieldLabel htmlFor={controlId}>{field.label}</FieldLabel>
         <FieldError>{error}</FieldError>
       </Field>
+    );
+  }
+
+  if (field.type === "json" && field.editor === "captions") {
+    let cues: unknown = [];
+    try { cues = JSON.parse(String(value || "[]")); } catch {}
+    return (
+      <div className="flex flex-col gap-2">
+        <CaptionsEditor value={cues} onChange={(next) => onChange(JSON.stringify(next, null, 2))} />
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      </div>
     );
   }
 

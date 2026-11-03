@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SimpleSelect } from "@/components/ui/simple-select";
 import { Textarea } from "@/components/ui/textarea";
+import { formatTimestamp, parseCaptionFile, parseTimestamp, readCues, toWebVtt, type CaptionCue } from "@/lib/captions";
 import { isJsonObject, type JsonObject, type JsonValue } from "@/lib/structured-json";
 import { cn } from "@/lib/utils";
 
@@ -297,6 +298,108 @@ export function ExperimentConfigEditor({ value, onChange }: { value: JsonObject;
           )}
         </>
       )}
+    </section>
+  );
+}
+
+function TimeInput({ label, seconds, onCommit }: { label: string; seconds: number; onCommit: (seconds: number) => void }) {
+  const [draft, setDraft] = useState(formatTimestamp(seconds));
+  const [invalid, setInvalid] = useState(false);
+  const [lastSeconds, setLastSeconds] = useState(seconds);
+  if (seconds !== lastSeconds) {
+    // An import or reorder replaced this value; show it instead of the stale draft.
+    setLastSeconds(seconds);
+    setDraft(formatTimestamp(seconds));
+    setInvalid(false);
+  }
+  return (
+    <Input
+      aria-label={label}
+      aria-invalid={invalid || undefined}
+      value={draft}
+      inputMode="decimal"
+      className="w-24 font-mono text-xs tabular-nums"
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={() => {
+        const parsed = parseTimestamp(draft);
+        if (Number.isFinite(parsed)) {
+          setInvalid(false);
+          onCommit(parsed);
+          setDraft(formatTimestamp(parsed));
+        } else setInvalid(true);
+      }}
+    />
+  );
+}
+
+/** Timed caption cues for a video, with WebVTT/SRT import and export. */
+export function CaptionsEditor({ value, onChange }: { value: unknown; onChange: (cues: CaptionCue[]) => void }) {
+  const cues = readCues(value);
+  const fileId = useId();
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasted, setPasted] = useState("");
+  const [message, setMessage] = useState("");
+  const problems = cues.flatMap((cue, index) => [
+    cue.end <= cue.start ? `Cue ${index + 1} must end after it starts.` : "",
+    index > 0 && cue.start < cues[index - 1].start ? `Cue ${index + 1} starts before cue ${index}.` : "",
+    !cue.text.trim() ? `Cue ${index + 1} needs caption text.` : "",
+  ]).filter(Boolean);
+
+  const update = (index: number, patch: Partial<CaptionCue>) => onChange(cues.map((cue, position) => position === index ? { ...cue, ...patch } : cue));
+  const importText = (text: string) => {
+    const parsed = parseCaptionFile(text);
+    if (!parsed.length) { setMessage("No captions found. Use a WebVTT (.vtt) or SubRip (.srt) file."); return; }
+    onChange(parsed);
+    setMessage(`Imported ${parsed.length} caption${parsed.length === 1 ? "" : "s"}.`);
+    setPasteOpen(false);
+    setPasted("");
+  };
+  const download = () => {
+    const url = URL.createObjectURL(new Blob([toWebVtt(cues)], { type: "text/vtt" }));
+    Object.assign(document.createElement("a"), { href: url, download: "captions.vtt" }).click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <section className="flex min-w-0 flex-col gap-3 border-t border-border/70 pt-5" aria-label="Captions">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold">Captions</h3>
+          <p className="text-xs text-muted-foreground">Shown on uploaded videos and used as the transcript when none is written. Times are minutes:seconds.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <label htmlFor={fileId} className="inline-flex h-8 cursor-pointer items-center rounded-lg border bg-card px-3 text-xs font-medium hover:bg-muted">Import .vtt / .srt</label>
+          <input id={fileId} type="file" accept=".vtt,.srt,text/vtt" className="sr-only" onChange={async (event) => { const file = event.target.files?.[0]; if (file) importText(await file.text()); event.target.value = ""; }} />
+          <Button type="button" size="sm" variant="outline" aria-expanded={pasteOpen} onClick={() => setPasteOpen((open) => !open)}>Paste captions</Button>
+          <Button type="button" size="sm" variant="outline" disabled={!cues.length} onClick={download}>Download .vtt</Button>
+        </div>
+      </div>
+      {message && <p role="status" className="text-xs text-muted-foreground">{message}</p>}
+      {pasteOpen && (
+        <div className="flex flex-col gap-2 rounded-xl border bg-card p-3">
+          <Label htmlFor={`${fileId}-paste`}>Paste WebVTT or SRT text</Label>
+          <Textarea id={`${fileId}-paste`} rows={6} value={pasted} onChange={(event) => setPasted(event.target.value)} className="font-mono text-xs" placeholder={"WEBVTT\n\n00:00:00.000 --> 00:00:03.000\nWelcome to the lesson."} />
+          <Button type="button" size="sm" className="w-fit" disabled={!pasted.trim()} onClick={() => importText(pasted)}>Import pasted captions</Button>
+        </div>
+      )}
+      {cues.length === 0 ? (
+        <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No captions yet. Import a caption file or add cues one by one.</p>
+      ) : (
+        <ol className="flex max-h-96 flex-col gap-2 overflow-y-auto pr-1">
+          {cues.map((cue, index) => (
+            <li key={index} className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-2">
+              <span className="w-6 text-center text-xs text-muted-foreground tabular-nums">{index + 1}</span>
+              <TimeInput label={`Cue ${index + 1} start`} seconds={cue.start} onCommit={(start) => update(index, { start })} />
+              <span className="text-xs text-muted-foreground" aria-hidden="true">→</span>
+              <TimeInput label={`Cue ${index + 1} end`} seconds={cue.end} onCommit={(end) => update(index, { end })} />
+              <Input aria-label={`Cue ${index + 1} text`} value={cue.text} maxLength={500} className="min-w-48 flex-1" onChange={(event) => update(index, { text: event.target.value })} />
+              <Button type="button" size="icon-sm" variant="ghost" aria-label={`Remove cue ${index + 1}`} onClick={() => onChange(cues.filter((_, position) => position !== index))}><Trash2 /></Button>
+            </li>
+          ))}
+        </ol>
+      )}
+      {problems.length > 0 && <p role="alert" className="text-xs text-destructive">{problems[0]}</p>}
+      <Button type="button" size="sm" variant="outline" className="w-fit" onClick={() => { const start = cues.at(-1)?.end ?? 0; onChange([...cues, { start, end: start + 3, text: "" }]); }}><Plus data-icon="inline-start" />Add cue</Button>
     </section>
   );
 }

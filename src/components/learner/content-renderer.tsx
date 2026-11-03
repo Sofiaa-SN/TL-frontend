@@ -1,8 +1,12 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, FileText, Lightbulb, MessageSquareText, Quote, Target } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { formatTimestamp, readCues, toWebVtt } from "@/lib/captions";
 import type { MediaAsset, Video } from "@/lib/learner/types";
 
 function record(value: unknown): Record<string, unknown> | null {
@@ -137,13 +141,26 @@ function youtubeEmbed(value: string) {
 export function VideoRenderer({ video, media, onEnded }: { video: Video; media?: MediaAsset; onEnded?: () => void }) {
   const url = media ? safeUrl(media.public_url || media.cdn_url) : null;
   const embed = url ? youtubeEmbed(url) : null;
+  const cues = useMemo(() => readCues(video.captions), [video.captions]);
+  const [trackUrl, setTrackUrl] = useState<string | null>(null);
+
+  // Captions are stored as cues; the <video> element needs a WebVTT file, so serve one from memory.
+  useEffect(() => {
+    if (!cues.length) { setTrackUrl(null); return; }
+    const next = URL.createObjectURL(new Blob([toWebVtt(cues)], { type: "text/vtt" }));
+    setTrackUrl(next);
+    return () => URL.revokeObjectURL(next);
+  }, [cues]);
   return (
     <div className="flex flex-col gap-4">
       <div className="overflow-hidden rounded-xl bg-foreground shadow-sm">
         {embed ? (
           <iframe src={embed} title={video.title} className="aspect-video w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
         ) : url && media?.mime_type.startsWith("video/") ? (
-          <video src={url} controls className="aspect-video w-full bg-black" onEnded={onEnded}>Your browser does not support embedded video.</video>
+          <video src={url} controls className="aspect-video w-full bg-black" onEnded={onEnded}>
+            {trackUrl && <track kind="captions" src={trackUrl} srcLang="en" label="English" default />}
+            Your browser does not support embedded video.
+          </video>
         ) : (
           <div className="grid aspect-video place-items-center px-6 text-center text-background">
             <div className="flex max-w-sm flex-col items-center gap-4">
@@ -155,11 +172,22 @@ export function VideoRenderer({ video, media, onEnded }: { video: Video; media?:
         )}
       </div>
       {(video.title || video.description) && <div className="flex flex-col gap-1.5"><h2 className="text-lg font-semibold tracking-tight">{video.title}</h2>{video.description && <p className="text-sm leading-6 text-muted-foreground">{video.description}</p>}</div>}
-      {video.transcript && (
+      {(video.transcript || cues.length > 0) && (
         <details className="group rounded-xl border bg-card">
           <summary className="learner-pressable cursor-pointer list-none px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">Read transcript</summary>
           <Separator />
-          <p className="whitespace-pre-wrap px-4 py-4 text-sm leading-7 text-muted-foreground">{video.transcript}</p>
+          {video.transcript ? (
+            <p className="whitespace-pre-wrap px-4 py-4 text-sm leading-7 text-muted-foreground">{video.transcript}</p>
+          ) : (
+            <ol className="flex flex-col gap-2 px-4 py-4">
+              {cues.map((cue, index) => (
+                <li key={index} className="grid grid-cols-[3.5rem_1fr] gap-3 text-sm leading-6">
+                  <span className="font-mono text-xs leading-6 text-muted-foreground tabular-nums">{formatTimestamp(cue.start).replace(/\.\d$/, "")}</span>
+                  <span className="text-muted-foreground">{cue.text}</span>
+                </li>
+              ))}
+            </ol>
+          )}
         </details>
       )}
     </div>

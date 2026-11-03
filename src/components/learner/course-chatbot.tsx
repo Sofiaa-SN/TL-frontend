@@ -24,7 +24,7 @@ const STARTERS = [
 ];
 
 /** Conversation body for the AI course tutor. Hosted inside the course help panel. */
-export function CourseTutorPanel({ courseId, active, onUnavailable }: { courseId: string; active: boolean; onUnavailable: () => void }) {
+export function CourseTutorPanel({ courseId, active, onUnavailable, starters }: { courseId: string; active: boolean; onUnavailable: () => void; starters?: string[] }) {
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -92,7 +92,7 @@ export function CourseTutorPanel({ courseId, active, onUnavailable }: { courseId
             </div>
             <p className="text-xs font-medium text-muted-foreground">Try asking</p>
             <div className="flex flex-col gap-2">
-              {STARTERS.map((starter) => (
+              {(starters?.length ? starters : STARTERS).map((starter) => (
                 <button key={starter} type="button" onClick={() => void ask(starter)} className="rounded-lg border bg-card px-3 py-2 text-left text-sm transition-colors hover:border-primary/40 hover:bg-accent">
                   {starter}
                 </button>
@@ -113,7 +113,7 @@ export function CourseTutorPanel({ courseId, active, onUnavailable }: { courseId
               <details className="mt-2 border-t border-current/15 pt-2 text-xs">
                 <summary className="cursor-pointer font-medium">Supporting course context</summary>
                 <ul className="mt-2 space-y-2">
-                  {message.citations.map((citation, index) => <li key={`${citation.chunk_id}-${index}`}><span className="font-semibold">{citation.chunk_id}</span>: “{citation.excerpt}”</li>)}
+                  {message.citations.map((citation, index) => <li key={`${citation.chunk_id}-${index}`} className="border-l-2 border-current/30 pl-2 italic">“{citation.excerpt}”</li>)}
                 </ul>
               </details>
             ) : null}
