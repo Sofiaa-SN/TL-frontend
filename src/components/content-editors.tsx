@@ -99,6 +99,13 @@ const BLOCK_TYPES = [
   { value: "equation", label: "Equation" },
 ];
 
+/** Mirrors the learner renderer: any type mentioning "callout" or "tip" renders as a callout. */
+function blockKind(type: string) {
+  const lower = type.toLowerCase();
+  if (lower.includes("callout") || lower.includes("tip")) return "callout";
+  return lower === "equation" ? "equation" : "text";
+}
+
 /** Form editor for activity content: blocks, a facilitation task and a related source. */
 export function ActivityContentEditor({ value, onChange, onValidityChange, label = "Learner content" }: { value: JsonObject; onChange: (value: JsonObject) => void; onValidityChange?: (valid: boolean) => void; label?: string }) {
   const [mode, setModeState] = useState<Mode>("form");
@@ -150,7 +157,7 @@ export function ActivityContentEditor({ value, onChange, onValidityChange, label
                 <li key={index} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="grid size-6 place-items-center rounded-full bg-muted text-xs font-semibold tabular-nums">{index + 1}</span>
-                    <SimpleSelect aria-label={`Block ${index + 1} type`} size="sm" className="w-40" value={BLOCK_TYPES.some((item) => item.value === type) ? type : "text"} onValueChange={(next) => updateBlock(index, "type", next)} options={BLOCK_TYPES} />
+                    <SimpleSelect aria-label={`Block ${index + 1} type`} size="sm" className="w-40" value={blockKind(type)} onValueChange={(next) => updateBlock(index, "type", next)} options={BLOCK_TYPES} />
                     <span className="flex-1" />
                     <RowActions index={index} count={blocks.length} label={`block ${index + 1}`} onMove={(from, to) => setBlocks(move(blocks, from, to))} onRemove={() => setBlocks(blocks.filter((_, position) => position !== index))} />
                   </div>

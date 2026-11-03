@@ -92,3 +92,10 @@ describe("CaptionsEditor", () => {
     expect(screen.getByRole("alert").textContent).toContain("needs caption text");
   });
 });
+
+describe("ActivityContentEditor block types", () => {
+  it("shows tip blocks as callouts, matching how learners see them", () => {
+    render(<ActivityContentEditor value={{ blocks: [{ type: "tip", heading: "Learning by doing" }] }} onChange={vi.fn()} />);
+    expect(screen.getByRole("combobox", { name: "Block 1 type" }).textContent).toContain("Tip / callout");
+  });
+});
