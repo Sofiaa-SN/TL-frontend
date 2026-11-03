@@ -54,22 +54,35 @@ export function LearnerCourseDetail({ courseId }: { courseId: string }) {
         <Link href="/learn/courses"><ArrowLeft data-icon="inline-start" />Back to courses</Link>
       </Button>
 
-      <Card>
-        <CardHeader>
-          <p className="mb-2 text-sm font-medium text-brand-strong">
-            {course.program_name}
-          </p>
-          <CardTitle className="max-w-4xl text-3xl sm:text-4xl">{course.name}</CardTitle>
-          {course.description && <CardDescription className="max-w-3xl text-sm leading-6">{course.description}</CardDescription>}
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-2"><Layers3 className="size-4" />{version?.chapters.length || 0} chapters</span>
-          <span className="inline-flex items-center gap-2"><BookOpenCheck className="size-4" />{activities.length} activities</span>
-          <span className="inline-flex items-center gap-2"><Clock3 className="size-4" />{totalMinutes ? `${totalMinutes} min` : "Self-paced"}</span>
-        </CardContent>
-      </Card>
+      <section className="brand-hero relative overflow-hidden rounded-2xl p-6 shadow-lg shadow-primary/10 sm:p-8">
+        <p className="text-sm font-semibold text-[#7fe3dc]">{course.program_name}</p>
+        <h1 className="mt-2 max-w-4xl font-heading text-3xl font-semibold tracking-tight text-white sm:text-4xl">{course.name}</h1>
+        {course.description && <p className="mt-3 max-w-3xl text-sm leading-6 text-white/80">{course.description}</p>}
+        <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/80">
+          <span className="inline-flex items-center gap-2"><Layers3 className="size-4" aria-hidden="true" />{version?.chapters.length || 0} chapters</span>
+          <span className="inline-flex items-center gap-2"><BookOpenCheck className="size-4" aria-hidden="true" />{activities.length} activities</span>
+          <span className="inline-flex items-center gap-2"><Clock3 className="size-4" aria-hidden="true" />{totalMinutes ? `${totalMinutes} min` : "Self-paced"}</span>
+        </div>
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+          {upcoming && (
+            <Button asChild size="lg" className="w-fit bg-white text-primary hover:bg-white/90">
+              <Link href={`/learn/courses/${course.id}/activities/${upcoming.activity.id}`}>
+                <PlayCircle data-icon="inline-start" />
+                {completeCount ? "Continue learning" : "Start course"}
+              </Link>
+            </Button>
+          )}
+          <div className="flex min-w-0 flex-1 items-center gap-3 sm:max-w-xs">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/20" role="progressbar" aria-label="Course progress" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+              <div className="h-full rounded-full bg-[#7fe3dc] transition-[width]" style={{ width: `${percent}%` }} />
+            </div>
+            <span className="text-sm font-semibold tabular-nums text-white">{percent}%</span>
+          </div>
+        </div>
+        <span aria-hidden="true" className="pointer-events-none absolute -top-20 -right-20 size-72 rounded-full border-[32px] border-white/5" />
+      </section>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <section className="flex min-w-0 flex-col gap-4" aria-labelledby="course-content-heading">
           <div className="flex items-end justify-between gap-4">
             <div className="flex flex-col gap-1">
@@ -154,7 +167,7 @@ export function LearnerCourseDetail({ courseId }: { courseId: string }) {
           )}
         </section>
 
-        <aside className="flex flex-col gap-4 xl:sticky xl:top-24 xl:self-start">
+        <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
           <Card>
             <CardHeader>
               <CardTitle>Your progress</CardTitle>
@@ -169,7 +182,7 @@ export function LearnerCourseDetail({ courseId }: { courseId: string }) {
                 <Button asChild className="w-full">
                   <Link href={`/learn/courses/${course.id}/activities/${upcoming.activity.id}`}>
                     <PlayCircle data-icon="inline-start" />
-                    {percent ? "Continue learning" : "Start course"}
+                    {completeCount ? "Continue learning" : "Start course"}
                   </Link>
                 </Button>
               </CardFooter>

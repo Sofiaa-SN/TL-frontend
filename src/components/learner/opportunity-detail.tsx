@@ -85,7 +85,7 @@ function ApplicationAction({ opportunity, existing }: { opportunity: CareerOppor
         <Button render={<a href={destination} target="_blank" rel="noreferrer noopener" />} nativeButton={false} size="lg">
           Continue to company website<ExternalLink data-icon="inline-end" />
         </Button>
-        <p className="text-xs leading-5 text-muted-foreground">You’ll finish this application on the employer’s secure website. Tella will not create or track an application status.</p>
+        <p className="text-xs leading-5 text-muted-foreground">You’ll finish this application on the employer’s secure website. Sofiaa will not create or track an application status.</p>
       </div>
     ) : <Alert variant="destructive"><ExternalLink /><AlertTitle>Application link unavailable</AlertTitle><AlertDescription>The employer’s secure application destination could not be verified.</AlertDescription></Alert>;
   }
@@ -114,7 +114,7 @@ function ApplicationAction({ opportunity, existing }: { opportunity: CareerOppor
   return (
     <form className="space-y-5" onSubmit={submit} noValidate>
       <div>
-        <h2 className="text-xl font-semibold tracking-tight">Apply through Tella</h2>
+        <h2 className="text-xl font-semibold tracking-tight">Apply through Sofiaa</h2>
         <p className="mt-1 text-sm text-muted-foreground">Your account identity is included with this application.</p>
       </div>
       <FieldGroup>
@@ -189,7 +189,7 @@ export function OpportunityDetail({ opportunityId }: { opportunityId: string }) 
           {opportunity.company_website && <p className="text-sm text-muted-foreground"><BriefcaseBusiness className="mr-2 inline size-4" />Learn more at <a href={opportunity.company_website} target="_blank" rel="noreferrer noopener" className="font-medium text-foreground underline underline-offset-4">{opportunity.company_name}</a>.</p>}
         </main>
         <aside className="lg:sticky lg:top-24">
-          <Card><CardHeader><CardTitle>Your next step</CardTitle><CardDescription>{opportunity.application_mode === "INTERNAL" ? "Submit securely without leaving Tella." : "Continue on the employer’s website."}</CardDescription></CardHeader><CardContent><ApplicationAction opportunity={opportunity} existing={existing} /></CardContent></Card>
+          <Card><CardHeader><CardTitle>Your next step</CardTitle><CardDescription>{opportunity.application_mode === "INTERNAL" ? "Submit securely without leaving Sofiaa." : "Continue on the employer’s website."}</CardDescription></CardHeader><CardContent><ApplicationAction opportunity={opportunity} existing={existing} /></CardContent></Card>
         </aside>
       </div>
     </div>

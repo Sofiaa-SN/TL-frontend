@@ -82,16 +82,19 @@ function GeoGebraActivity({ definition, onProgress }: { definition: Record<strin
           if (disposed) return;
           setStatus("Interactive activity ready and connected.");
           if (!names.length) return;
-          let previous = "";
+          let previous: string | null = null;
           const poll = () => {
             const values = Object.fromEntries(names.map((name) => [name, readGeoGebraObject(api, name)]));
             const complete = typeof completion.object === "string" && compare(values[completion.object], completion);
             const raw = typeof tracking.progress_object === "string" ? Number(values[tracking.progress_object]) : 0;
             const progress = complete ? 100 : Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 0;
             const snapshot = JSON.stringify(values);
+            // The first reading is the applet's starting state, not learner
+            // progress; report it only when it already shows completion.
+            const initial = previous === null;
             if (snapshot !== previous) {
               previous = snapshot;
-              callbackRef.current(progress, { values }, complete);
+              if (!initial || complete) callbackRef.current(progress, { values }, complete);
             }
             if (complete && timer) { clearInterval(timer); timer = null; setStatus("Activity completion recorded."); }
             return complete;
@@ -179,7 +182,7 @@ function GraphSpaceActivity({ activity, experiment, config }: { activity: Activi
           title={heading}
           loading="lazy"
           className="h-[72svh] min-h-[620px] w-full border-0 fullscreen:h-screen"
-          sandbox="allow-scripts allow-same-origin allow-downloads allow-modals"
+          sandbox="allow-scripts allow-downloads allow-modals"
         />
       </div>
     </div>

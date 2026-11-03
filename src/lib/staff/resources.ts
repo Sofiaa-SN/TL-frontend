@@ -707,7 +707,7 @@ export const staffResources: Record<string, StaffResourceDefinition> = {
     title: "External mappings",
     singular: "external mapping",
     description:
-      "Connect Tella accounts to Moodle, Canvas, or mobile identities.",
+      "Connect Sofiaa accounts to Moodle, Canvas, or mobile identities.",
     endpoint: "external-user-mappings",
     viewPermission: "students.view_externalusermapping",
     addPermission: "students.add_externalusermapping",

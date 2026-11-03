@@ -26,6 +26,7 @@ describe("ApplicationsView", () => {
     vi.mocked(learnerApi.withdrawApplication).mockResolvedValue({ ...active, status: "WITHDRAWN", status_label: "Withdrawn", can_withdraw: false });
     const { rerender } = render(<ApplicationsView />);
     fireEvent.click(await screen.findByRole("button", { name: "Withdraw" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Withdraw application" }));
     await waitFor(() => expect(learnerApi.withdrawApplication).toHaveBeenCalledWith(active.id));
     expect(await screen.findByText("Withdrawn")).not.toBeNull();
     await waitFor(() => expect(screen.queryByRole("button", { name: "Withdraw" })).toBeNull());

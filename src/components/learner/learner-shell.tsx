@@ -15,6 +15,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
+import { ThemeToggle } from "@/components/theme";
+import { Toaster } from "@/components/ui/toast";
 import { initials } from "@/lib/learner/course";
 import { cn } from "@/lib/utils";
 import { LearnerBrand } from "./brand";
@@ -42,8 +44,10 @@ function DesktopNavigation() {
             key={href}
             href={href}
             className={cn(
-              "learner-pressable rounded-lg px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-              active ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+              "learner-pressable relative rounded-lg px-3 py-2 text-sm font-medium",
+              active
+                ? "text-primary after:absolute after:inset-x-3 after:-bottom-[13px] after:h-0.5 after:rounded-full after:bg-brand-teal"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
             aria-current={active ? "page" : undefined}
           >
@@ -66,12 +70,14 @@ function MobileNavigation() {
             key={href}
             href={href}
             className={cn(
-              "learner-pressable flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-medium focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-              active ? "text-brand-strong" : "text-muted-foreground",
+              "learner-pressable flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-xs font-medium",
+              active ? "text-primary" : "text-muted-foreground",
             )}
             aria-current={active ? "page" : undefined}
           >
-            <Icon className="size-[18px]" aria-hidden="true" />
+            <span className={cn("grid h-7 w-12 place-items-center rounded-full transition-colors", active && "bg-brand-indigo-soft")}>
+              <Icon className="size-[18px]" aria-hidden="true" />
+            </span>
             {label}
           </Link>
         );
@@ -86,7 +92,7 @@ function AccountMenu({ displayName, logout }: { displayName: string; logout: () 
       <DropdownMenuTrigger
         render={<Button variant="ghost" size="lg" aria-label={`Open account menu for ${displayName}`} />}
       >
-        <Avatar size="sm"><AvatarFallback>{initials(displayName)}</AvatarFallback></Avatar>
+        <Avatar size="sm"><AvatarFallback className="bg-brand-indigo-soft text-xs font-semibold text-primary">{initials(displayName)}</AvatarFallback></Avatar>
         <span className="hidden max-w-36 truncate sm:inline">{displayName}</span>
         <ChevronDown data-icon="inline-end" />
       </DropdownMenuTrigger>
@@ -126,19 +132,25 @@ export function LearnerShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="learner-theme min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur-xl">
+      <a href="#main-content" className="sr-only z-50 rounded-md bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
+        Skip to content
+      </a>
+      <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-8 px-4 sm:px-6 lg:px-8">
           <LearnerBrand />
           <DesktopNavigation />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <ThemeToggle />
             <AccountMenu displayName={user.display_name} logout={logout} />
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-7xl px-4 pb-28 pt-8 sm:px-6 sm:pt-10 md:pb-12 lg:px-8">
+      {/* Bottom padding leaves room for the mobile tab bar and floating help launcher. */}
+      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl px-4 pt-8 pb-36 outline-none sm:px-6 sm:pt-10 md:pb-28 lg:px-8">
         {children}
       </main>
       <MobileNavigation />
+      <Toaster />
     </div>
   );
 }

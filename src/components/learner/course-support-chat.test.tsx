@@ -81,12 +81,12 @@ describe("CourseSupportChat", () => {
     api.availability.mockResolvedValueOnce({ available: false, conversation: null });
     render(<CourseSupportChat courseId="course-1" />);
     await waitFor(() => expect(api.availability).toHaveBeenCalledWith("course-1"));
-    expect(screen.queryByRole("button", { name: "Open teacher support" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Ask a teacher/ })).toBeNull();
   });
 
   it("loads persisted history, marks it read, and renders markup as inert text", async () => {
     render(<CourseSupportChat courseId="course-1" />);
-    await userEvent.click(await screen.findByRole("button", { name: "Open teacher support" }));
+    await userEvent.click(await screen.findByRole("button", { name: /Ask a teacher/ }));
 
     expect(await screen.findByText(teacherMessage.content)).toBeDefined();
     expect(document.querySelector("img")).toBeNull();
@@ -98,7 +98,7 @@ describe("CourseSupportChat", () => {
   it("keeps a message visibly pending until the server acknowledges it", async () => {
     api.messages.mockResolvedValueOnce({ results: [], has_more: false, next_after_sequence: 0 });
     render(<CourseSupportChat courseId="course-1" />);
-    await userEvent.click(await screen.findByRole("button", { name: "Open teacher support" }));
+    await userEvent.click(await screen.findByRole("button", { name: /Ask a teacher/ }));
     await userEvent.type(await screen.findByLabelText("Message your teacher"), "Please explain question four");
     await userEvent.click(screen.getByRole("button", { name: "Send to teacher" }));
 
@@ -119,7 +119,7 @@ describe("CourseSupportChat", () => {
     socket.sendResult = false;
     api.messages.mockResolvedValueOnce({ results: [], has_more: false, next_after_sequence: 0 });
     render(<CourseSupportChat courseId="course-1" />);
-    await userEvent.click(await screen.findByRole("button", { name: "Open teacher support" }));
+    await userEvent.click(await screen.findByRole("button", { name: /Ask a teacher/ }));
     await userEvent.type(await screen.findByLabelText("Message your teacher"), "Can you help?");
     await userEvent.click(screen.getByRole("button", { name: "Send to teacher" }));
     expect(screen.getByText("Not sent")).toBeDefined();
@@ -129,7 +129,7 @@ describe("CourseSupportChat", () => {
   it("keeps expired-enrollment history readable without a composer", async () => {
     api.availability.mockResolvedValueOnce({ available: false, conversation: { ...conversation, can_send: false } });
     render(<CourseSupportChat courseId="course-1" />);
-    await userEvent.click(await screen.findByRole("button", { name: "Open teacher support" }));
+    await userEvent.click(await screen.findByRole("button", { name: /Ask a teacher/ }));
     expect(await screen.findByText(/no longer active/)).toBeDefined();
     expect(screen.queryByLabelText("Message your teacher")).toBeNull();
   });

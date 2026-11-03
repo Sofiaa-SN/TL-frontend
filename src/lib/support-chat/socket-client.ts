@@ -3,6 +3,8 @@ import type { SupportClientCommand, SupportConnectionState, SupportServerEvent, 
 type SocketLike = Pick<WebSocket, "readyState" | "send" | "close" | "onopen" | "onmessage" | "onclose" | "onerror">;
 type SocketFactory = (url: string) => SocketLike;
 
+const OFFLINE_RETRY_MS = 30_000;
+
 export class SupportSocketClient {
   private socket: SocketLike | null = null;
   private stopped = true;
@@ -19,11 +21,33 @@ export class SupportSocketClient {
 
   connect() {
     this.stopped = false;
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", this.handleWake);
+      document.addEventListener("visibilitychange", this.handleWake);
+    }
     void this.open(false);
   }
 
+  /** Retry immediately, e.g. from a "Reconnect" button or when the device comes back online. */
+  reconnect() {
+    if (this.stopped || this.socket) return;
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
+    this.retries = 0;
+    void this.open(true);
+  }
+
+  private handleWake = () => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    this.reconnect();
+  };
+
   disconnect() {
     this.stopped = true;
+    if (typeof window !== "undefined") {
+      window.removeEventListener("online", this.handleWake);
+      document.removeEventListener("visibilitychange", this.handleWake);
+    }
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = null;
     this.socket?.close(1000, "Client closed");
@@ -69,8 +93,12 @@ export class SupportSocketClient {
   }
 
   private scheduleReconnect() {
-    if (this.stopped || this.retries >= 6) {
+    if (this.stopped) return;
+    if (this.retries >= 6) {
+      // Stay offline but keep trying slowly; waking the tab or coming back
+      // online retries immediately.
       this.onState("offline");
+      this.reconnectTimer = setTimeout(() => void this.open(true), OFFLINE_RETRY_MS);
       return;
     }
     this.retries += 1;

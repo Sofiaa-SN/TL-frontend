@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { toast } from "@/components/ui/toast";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -222,6 +224,24 @@ function statusLabel(value: string) {
   return normalized.charAt(0).toLocaleUpperCase() + normalized.slice(1);
 }
 
+const DATE_FORMAT = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" });
+const PAGE_SIZE = 50;
+
+const STATUS_TONE: Record<string, string> = {
+  published: "bg-brand-teal-soft text-brand-teal-strong",
+  active: "bg-brand-teal-soft text-brand-teal-strong",
+  completed: "bg-brand-teal-soft text-brand-teal-strong",
+  graded: "bg-brand-teal-soft text-brand-teal-strong",
+  draft: "bg-warning/15 text-warning-foreground dark:text-warning",
+  in_progress: "bg-brand-indigo-soft text-primary",
+  started: "bg-brand-indigo-soft text-primary",
+};
+
+function StatusBadge({ value }: { value: string }) {
+  const tone = STATUS_TONE[value.toLowerCase()] ?? "bg-muted text-muted-foreground";
+  return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${tone}`}>{statusLabel(value)}</span>;
+}
+
 function formatValue(
   record: StaffRecord,
   key: string,
@@ -244,7 +264,7 @@ function formatValue(
     /(_at|date)$/.test(key) &&
     !Number.isNaN(Date.parse(value))
   ) {
-    return new Date(value).toLocaleString();
+    return DATE_FORMAT.format(new Date(value));
   }
   return value === null || value === undefined || value === ""
     ? "—"
@@ -349,7 +369,9 @@ function ResourceField({
           id={controlId}
           value={String(value ?? "")}
           onChange={(event) => onChange(event.target.value)}
-          rows={field.type === "json" ? 8 : 4}
+          rows={field.type === "json" ? 10 : 4}
+          spellCheck={field.type === "json" ? false : undefined}
+          className={field.type === "json" ? "font-mono text-xs leading-5" : undefined}
           required={field.required}
           aria-invalid={invalid || undefined}
         />
@@ -406,14 +428,31 @@ function ResourceDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [confirm, confirmDialog] = useConfirm();
 
   useEffect(() => {
     if (open) {
       setValues(initialFormValues(definition, record));
       setErrors({});
       setMessage("");
+      setDirty(false);
     }
   }, [definition, open, record]);
+
+  async function requestOpenChange(next: boolean) {
+    if (!next && dirty && !saving) {
+      const discard = await confirm({
+        title: "Discard your changes?",
+        description: `You have unsaved edits to this ${definition.singular}.`,
+        confirmLabel: "Discard changes",
+        cancelLabel: "Keep editing",
+        destructive: true,
+      });
+      if (!discard) return;
+    }
+    onOpenChange(next);
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -436,6 +475,8 @@ function ResourceDialog({
             serialized.payload,
           );
       onSaved(saved);
+      setDirty(false);
+      toast.success(record ? `Saved changes to this ${definition.singular}.` : `Created a new ${definition.singular}.`);
       onOpenChange(false);
     } catch (caught) {
       if (caught instanceof ApiError) {
@@ -450,7 +491,8 @@ function ResourceDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => void requestOpenChange(next)}>
+      {confirmDialog}
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
@@ -458,7 +500,7 @@ function ResourceDialog({
           </DialogTitle>
           <DialogDescription>{definition.description}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={submit} className="flex flex-col gap-5">
+        <form onSubmit={submit} onChange={() => setDirty(true)} className="flex flex-col gap-5">
           <FieldGroup>
             {definition.fields
               .filter((field) => !(record && field.createOnly))
@@ -500,6 +542,14 @@ function ResourceDialog({
   );
 }
 
+// Programs and courses embed the whole curriculum tree by default; tables and
+// pickers only need the flat rows.
+const SUMMARY_ENDPOINTS = new Set(["programs", "courses"]);
+
+function summaryPath(endpoint: string) {
+  return SUMMARY_ENDPOINTS.has(endpoint) ? `${endpoint}?view=summary` : endpoint;
+}
+
 export function ResourceWorkspace({ resourceKey }: { resourceKey: string }) {
   const definition = staffResources[resourceKey];
   const { user, loading: authLoading } = useAuth();
@@ -508,6 +558,7 @@ export function ResourceWorkspace({ resourceKey }: { resourceKey: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<StaffRecord | null>(null);
 
@@ -538,11 +589,11 @@ export function ResourceWorkspace({ resourceKey }: { resourceKey: string }) {
         ),
       ];
       const [nextRecords, relationEntries] = await Promise.all([
-        staffApi.list<StaffRecord>(definition.endpoint),
+        staffApi.list<StaffRecord>(summaryPath(definition.endpoint)),
         Promise.all(
           endpoints.map(
             async (endpoint) =>
-              [endpoint, await staffApi.list<StaffRecord>(endpoint)] as const,
+              [endpoint, await staffApi.list<StaffRecord>(summaryPath(endpoint))] as const,
           ),
         ),
       ]);
@@ -641,10 +692,7 @@ export function ResourceWorkspace({ resourceKey }: { resourceKey: string }) {
             <ArrowLeft data-icon="inline-start" />
             Back
           </Button>
-          <p className="mt-4 text-xs font-semibold uppercase tracking-[.16em] text-muted-foreground">
-            {definition.section}
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight">
             {definition.title}
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
@@ -682,7 +730,7 @@ export function ResourceWorkspace({ resourceKey }: { resourceKey: string }) {
           </InputGroupAddon>
           <InputGroupInput
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => { setQuery(event.target.value); setPage(0); }}
             placeholder={`Search ${definition.title.toLowerCase()}…`}
             aria-label={`Search ${definition.title.toLowerCase()}`}
           />
@@ -757,7 +805,7 @@ export function ResourceWorkspace({ resourceKey }: { resourceKey: string }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((record) => (
+              {filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((record) => (
                 <TableRow key={String(record.id)} className="group">
                   {definition.columns.map((column) => {
                     const value = formatValue(
@@ -767,14 +815,8 @@ export function ResourceWorkspace({ resourceKey }: { resourceKey: string }) {
                       relations,
                     );
                     return (
-                      <TableCell key={column.key} className="max-w-80 truncate">
-                        {statusLike(column.key, value) ? (
-                          <span className="text-xs text-muted-foreground">
-                            {statusLabel(value)}
-                          </span>
-                        ) : (
-                          value
-                        )}
+                      <TableCell key={column.key} className="max-w-80 min-w-24 truncate" title={value}>
+                        {statusLike(column.key, value) ? <StatusBadge value={value} /> : value}
                       </TableCell>
                     );
                   })}
@@ -782,6 +824,8 @@ export function ResourceWorkspace({ resourceKey }: { resourceKey: string }) {
                     <TableCell className="sticky right-0 border-l bg-card text-right group-hover:bg-muted/50">
                       <Button
                         variant="ghost"
+                        size="sm"
+                        aria-label={`Edit ${formatValue(record, definition.columns[0]?.key ?? "id", definition, relations)}`}
                         onClick={() => {
                           setEditing(record);
                           setDialogOpen(true);
@@ -796,6 +840,17 @@ export function ResourceWorkspace({ resourceKey }: { resourceKey: string }) {
               ))}
             </TableBody>
           </Table>
+          {filtered.length > PAGE_SIZE && (
+            <nav aria-label="Pages" className="flex items-center justify-between gap-3 border-t px-4 py-3 text-sm text-muted-foreground">
+              <span className="tabular-nums">
+                Showing {page * PAGE_SIZE + 1}–{Math.min(filtered.length, (page + 1) * PAGE_SIZE)} of {filtered.length}
+              </span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>Previous</Button>
+                <Button size="sm" variant="outline" disabled={(page + 1) * PAGE_SIZE >= filtered.length} onClick={() => setPage((current) => current + 1)}>Next</Button>
+              </div>
+            </nav>
+          )}
         </div>
       )}
 

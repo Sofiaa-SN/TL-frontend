@@ -7,9 +7,14 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans), "Segoe UI", sans-serif;
+  --font-sans: var(--font-body), "Segoe UI", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), "SFMono-Regular", Consolas, monospace;
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-display), var(--font-body), "Segoe UI", sans-serif;
+  --color-brand-indigo: var(--brand-indigo);
+  --color-brand-indigo-soft: var(--brand-indigo-soft);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-teal-strong: var(--brand-teal-strong);
+  --color-brand-teal-soft: var(--brand-teal-soft);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
@@ -53,86 +58,119 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Sofiaa design tokens, derived from the logo:
+ *   indigo #0920A0 (wordmark) and teal #029F9F (dot, "SYSTEMS").
+ * Indigo carries primary actions and navigation; teal marks progress,
+ * success and learning moments. Both portals share one system.
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --success: oklch(0.59 0.12 164);
-  --success-foreground: oklch(0.985 0.01 164);
-  --warning: oklch(0.72 0.12 75);
-  --warning-foreground: oklch(0.25 0.05 65);
+  --brand-indigo: #0920a0;
+  --brand-indigo-soft: #eef0fb;
+  --brand-teal: #029f9f;
+  --brand-teal-strong: #027373;
+  --brand-teal-soft: #e3f5f5;
+
+  --background: #f6f7fb;
+  --foreground: #0b1240;
+  --card: #ffffff;
+  --card-foreground: #0b1240;
+  --popover: #ffffff;
+  --popover-foreground: #0b1240;
+  --primary: var(--brand-indigo);
+  --primary-foreground: #ffffff;
+  --secondary: var(--brand-teal-soft);
+  --secondary-foreground: #035757;
+  --muted: #eef1f7;
+  --muted-foreground: #525c80;
+  --accent: var(--brand-indigo-soft);
+  --accent-foreground: var(--brand-indigo);
+  --brand-strong: var(--brand-indigo);
+  --destructive: #c62a3a;
+  --border: #e1e5f0;
+  --input: #cfd6e6;
+  --ring: var(--brand-indigo);
+  --chart-1: #0920a0;
+  --chart-2: #029f9f;
+  --chart-3: #5b6cf0;
+  --chart-4: #7fd3cf;
+  --chart-5: #f0a63c;
+  --radius: 0.75rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a2152;
+  --sidebar-primary: var(--brand-indigo);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--brand-indigo-soft);
+  --sidebar-accent-foreground: var(--brand-indigo);
+  --sidebar-border: #e6e9f2;
+  --sidebar-ring: var(--brand-indigo);
+  --success: #0b8a6c;
+  --success-foreground: #ffffff;
+  --warning: #f0a63c;
+  --warning-foreground: #3d2604;
+  color-scheme: light;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  --success: oklch(0.7 0.12 164);
-  --success-foreground: oklch(0.18 0.03 164);
-  --warning: oklch(0.78 0.11 75);
-  --warning-foreground: oklch(0.2 0.04 65);
+  --brand-indigo: #8c9bff;
+  --brand-indigo-soft: #1a2260;
+  --brand-teal: #2fc9c0;
+  --brand-teal-strong: #5fe0d8;
+  --brand-teal-soft: #0d3a3d;
+
+  --background: #070b26;
+  --foreground: #e8ebff;
+  --card: #0e1438;
+  --card-foreground: #e8ebff;
+  --popover: #111841;
+  --popover-foreground: #e8ebff;
+  --primary: #8c9bff;
+  --primary-foreground: #070b26;
+  --secondary: var(--brand-teal-soft);
+  --secondary-foreground: #a6f1ec;
+  --muted: #151c48;
+  --muted-foreground: #a3abd6;
+  --accent: #1a2260;
+  --accent-foreground: #c9d0ff;
+  --brand-strong: #8c9bff;
+  --destructive: #ff7a85;
+  --border: #222a5c;
+  --input: #2c356e;
+  --ring: #8c9bff;
+  --chart-1: #8c9bff;
+  --chart-2: #2fc9c0;
+  --chart-3: #c3cbff;
+  --chart-4: #8fe6e0;
+  --chart-5: #f5bd6a;
+  --sidebar: #0a0f2e;
+  --sidebar-foreground: #dfe3ff;
+  --sidebar-primary: #8c9bff;
+  --sidebar-primary-foreground: #070b26;
+  --sidebar-accent: #1a2260;
+  --sidebar-accent-foreground: #e8ebff;
+  --sidebar-border: #1b2252;
+  --sidebar-ring: #8c9bff;
+  --success: #3fd1a8;
+  --success-foreground: #04261d;
+  --warning: #f5bd6a;
+  --warning-foreground: #2b1a02;
+  color-scheme: dark;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring;
+  }
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.015em;
   }
   body {
     @apply bg-background text-foreground;
@@ -148,6 +186,17 @@
   h3 {
     text-wrap: balance;
   }
+  body {
+    min-height: 100dvh;
+  }
+  /* Native selects that are not yet on the shared Select component still
+     follow the input styling and theme. */
+  select:not([data-slot]) {
+    border-color: var(--input);
+    background-color: var(--card);
+    color: var(--foreground);
+    border-radius: calc(var(--radius) * 0.8);
+  }
   p {
     text-wrap: pretty;
   }
@@ -156,39 +205,11 @@
   }
 }
 
+/* The learner area shares the Sofiaa tokens; this class only adds motion
+   details. It must not set min-height, which would override min-h-screen. */
 .learner-theme {
-  --font-sans: var(--font-poppins), Arial, sans-serif;
-  --background: #f8fbfc;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #3ab664;
-  --primary-foreground: #0f172a;
-  --secondary: #66d2e3;
-  --secondary-foreground: #0f172a;
-  --muted: #edf7fa;
-  --muted-foreground: #52616b;
-  --accent: #b5e5f8;
-  --accent-foreground: #0f172a;
-  --brand-strong: #237a45;
-  --border: #cde3e9;
-  --input: #b6d4dc;
-  --ring: #237a45;
-  --success: #237a45;
-  --success-foreground: #ffffff;
-  --warning: oklch(0.75 0.11 78);
-  --warning-foreground: oklch(0.27 0.05 68);
-  --chart-1: #3ab664;
-  --chart-2: #66d2e3;
-  --chart-3: #b5e5f8;
-  --chart-4: #237a45;
-  --radius: 0.75rem;
-  min-height: 100%;
   font-family: var(--font-sans);
   font-synthesis: none;
-  font-feature-settings: "calt" 1, "ss02" 1;
 }
 
 .learner-theme [data-slot="button"] {
@@ -197,11 +218,6 @@
 
 .learner-theme [data-slot="button"]:active:not(:disabled) {
   transform: scale(0.98);
-}
-
-.learner-theme :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
 }
 
 .learner-theme [data-slot="progress-indicator"] {
@@ -226,10 +242,31 @@
   transform-origin: 0 0 !important;
 }
 
+/* Soft brand backdrop for sign-in and hero surfaces. */
+.brand-backdrop {
+  background:
+    radial-gradient(60rem 30rem at 110% -10%, color-mix(in oklab, var(--brand-teal) 16%, transparent), transparent 60%),
+    radial-gradient(50rem 28rem at -10% 110%, color-mix(in oklab, var(--brand-indigo) 14%, transparent), transparent 60%),
+    var(--background);
+}
+
+.brand-hero {
+  background:
+    radial-gradient(38rem 18rem at 100% 0%, color-mix(in oklab, var(--brand-teal) 45%, transparent), transparent 70%),
+    linear-gradient(135deg, #0920a0 0%, #12207a 55%, #0b1552 100%);
+  color: #ffffff;
+}
+
+.dark .brand-hero {
+  background:
+    radial-gradient(38rem 18rem at 100% 0%, color-mix(in oklab, #2fc9c0 30%, transparent), transparent 70%),
+    linear-gradient(135deg, #18237a 0%, #101860 55%, #0a0f3e 100%);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .learner-theme *,
-  .learner-theme *::before,
-  .learner-theme *::after {
+  *,
+  *::before,
+  *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;

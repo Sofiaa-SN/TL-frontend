@@ -4,10 +4,10 @@ import { describe, expect, it } from "vitest";
 import { LearnerBrand } from "./brand";
 
 describe("LearnerBrand", () => {
-  it("uses the supplied Sofia logo without cropping and keeps an accessible home link", () => {
+  it("uses the Sofiaa logo without cropping and keeps an accessible home link", () => {
     const { container } = render(<LearnerBrand />);
 
-    const link = screen.getByRole("link", { name: "Sofia learning platform home" });
+    const link = screen.getByRole("link", { name: "Sofiaa learning home" });
     const image = container.querySelector("img");
 
     expect(link.getAttribute("href")).toBe("/learn");

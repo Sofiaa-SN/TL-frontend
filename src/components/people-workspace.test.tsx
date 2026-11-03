@@ -14,7 +14,7 @@ describe("people workspace", () => {
   it("shows the people directory and accessible resource charts", async () => {
     const { container } = render(<PeopleWorkspace />);
     await screen.findByText("Leena Rao");
-    expect(screen.getByRole("heading", { name: "Human resources" })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "Staff directory" })).toBeDefined();
     expect(screen.getByRole("img", { name: /people by role/i })).toBeDefined();
     expect(screen.getByRole("button", { name: /add person/i })).toBeDefined();
     expect((await axe(container)).violations.filter((violation) => ["serious", "critical"].includes(violation.impact || ""))).toEqual([]);

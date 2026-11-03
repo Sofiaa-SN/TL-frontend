@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
 import { Archive, ArrowLeft, Save, Send, StopCircle } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
@@ -102,6 +103,7 @@ export function OpportunityEditor({ opportunityId }: { opportunityId?: UUID }) {
     } catch (caught) { setFieldErrors(mapServerErrors(caught)); setError(caught instanceof ApiError ? caught.message : "The draft could not be saved."); return null; }
     finally { setSaving(false); }
   };
+  const [confirm, confirmDialog] = useConfirm();
   const transition = async (action: "publish" | "close" | "archive") => {
     let current = saved;
     if (action === "publish") {
@@ -109,7 +111,13 @@ export function OpportunityEditor({ opportunityId }: { opportunityId?: UUID }) {
       if (Object.keys(errors).length) { setError("Resolve the highlighted fields before publication."); return; }
       current = await save(); if (!current) return;
     }
-    if (!current || !window.confirm(`${action[0].toUpperCase()}${action.slice(1)} this opportunity?`)) return;
+    if (!current) return;
+    const copy = {
+      publish: { title: "Publish this opportunity?", description: "Eligible learners will be able to see it and apply straight away.", label: "Publish opportunity", destructive: false },
+      close: { title: "Close applications?", description: "Learners will no longer be able to apply. Existing applications are kept.", label: "Close applications", destructive: true },
+      archive: { title: "Archive this opportunity?", description: "It will be hidden from learners and moved out of your active list.", label: "Archive opportunity", destructive: true },
+    }[action];
+    if (!(await confirm({ title: copy.title, description: copy.description, confirmLabel: copy.label, destructive: copy.destructive }))) return;
     setSaving(true); setError("");
     try { const result = await staffOpportunityApi.lifecycle(current.id, action); setSaved(result); setValue(toInput(result)); setNotice(`Opportunity ${action === "publish" ? "published" : `${action}d`}.`); }
     catch (caught) { setFieldErrors(mapServerErrors(caught)); setError(caught instanceof ApiError ? caught.message : `The opportunity could not be ${action}d.`); }
@@ -120,6 +128,7 @@ export function OpportunityEditor({ opportunityId }: { opportunityId?: UUID }) {
   if (!allowed) return <main className="mx-auto max-w-6xl p-5 md:p-9"><Alert variant="destructive"><AlertTitle>Access denied</AlertTitle><AlertDescription>You do not have permission to {opportunityId ? "edit" : "create"} opportunities.</AlertDescription></Alert></main>;
 
   return <main className="mx-auto flex max-w-6xl flex-col gap-7 p-5 md:p-9">
+    {confirmDialog}
     <header className="flex flex-col justify-between gap-4 border-b pb-5 sm:flex-row sm:items-end"><div><Button render={<Link href="/opportunities" />} nativeButton={false} variant="ghost" size="sm" className="-ml-3"><ArrowLeft data-icon="inline-start" />Opportunities</Button><div className="mt-3 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{saved ? saved.title : "New opportunity"}</h1>{saved && <LifecycleBadge status={saved.lifecycle_status} />}</div><p className="mt-2 text-sm text-muted-foreground">Save an incomplete draft, then preview and publish when every required detail is ready.</p></div><div className="flex flex-wrap gap-2"><Button type="submit" form="opportunity-form" disabled={saving}><Save data-icon="inline-start" />{saving ? "Saving…" : "Save draft"}</Button>{saved?.lifecycle_status !== "PUBLISHED" && <Button type="button" onClick={() => void transition("publish")} disabled={saving}><Send data-icon="inline-start" />Publish</Button>}{saved?.lifecycle_status === "PUBLISHED" && <Button variant="outline" onClick={() => void transition("close")}><StopCircle data-icon="inline-start" />Close</Button>}{saved?.lifecycle_status !== "ARCHIVED" && <Button variant="ghost" onClick={() => void transition("archive")}><Archive data-icon="inline-start" />Archive</Button>}</div></header>
     {notice && <Alert><AlertDescription>{notice}</AlertDescription></Alert>}{error && <Alert variant="destructive"><AlertTitle>Action needed</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
     <form id="opportunity-form" onSubmit={(event) => void save(event)} className="space-y-10">

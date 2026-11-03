@@ -209,7 +209,7 @@ export function CourseSupportChat({ courseId }: { courseId: string }) {
   const canSend = Boolean(conversation?.can_send);
   return (
     <Sheet open={open} onOpenChange={(next) => void changeOpen(next)}>
-      <SheetTrigger render={<Button className="fixed bottom-36 right-4 z-40 h-11 rounded-full px-4 shadow-lg md:bottom-20 md:right-6" aria-label="Open teacher support" />}>
+      <SheetTrigger render={<Button variant="outline" className="h-11 rounded-full bg-card px-4 shadow-lg" />}>
         <MessageCircleQuestion data-icon="inline-start" />Ask a teacher
         {conversation?.unread_count ? <span className="ml-1 grid size-5 place-items-center rounded-full bg-background text-xs font-semibold text-foreground" aria-label={`${conversation.unread_count} unread messages`}>{conversation.unread_count}</span> : null}
       </SheetTrigger>
@@ -218,6 +218,7 @@ export function CourseSupportChat({ courseId }: { courseId: string }) {
           <div className="flex items-center gap-2">
             <SheetTitle>Teacher support</SheetTitle>
             <Badge variant={connection === "live" ? "secondary" : "outline"}>{connectionCopy[connection]}</Badge>
+            {connection === "offline" && <Button type="button" size="xs" variant="outline" onClick={() => socketRef.current?.reconnect()}>Reconnect</Button>}
           </div>
           <SheetDescription>
             Messages are shared with the staff responsible for this course.

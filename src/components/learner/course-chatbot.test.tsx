@@ -18,7 +18,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 async function openTutor() {
-  const button = await screen.findByRole("button", { name: "Open course chatbot" });
+  const button = await screen.findByRole("button", { name: "Ask course tutor" });
   await userEvent.click(button);
 }
 
@@ -32,7 +32,7 @@ describe("CourseChatbot", () => {
     api.course.mockResolvedValueOnce({ id: "course-1", chatbot_available: false });
     render(<CourseChatbot courseId="course-1" />);
     await waitFor(() => expect(api.course).toHaveBeenCalledWith("course-1"));
-    expect(screen.queryByRole("button", { name: "Open course chatbot" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Ask course tutor" })).toBeNull();
   });
 
   it("shows a grounded answer and its exact supporting context", async () => {

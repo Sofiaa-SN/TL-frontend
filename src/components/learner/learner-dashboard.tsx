@@ -72,8 +72,8 @@ export function LearnerDashboard() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const courses = await learnerApi.courses();
-      const [activityProgress, gamification, opportunities] = await Promise.all([
+      const [courses, activityProgress, gamification, opportunities] = await Promise.all([
+        learnerApi.courses(),
         learnerApi.activityProgress().catch(() => []),
         learnerApi.gamification().catch(() => emptyGamification),
         learnerApi.opportunities().catch(() => []),
@@ -110,13 +110,14 @@ export function LearnerDashboard() {
   const required = data.courses.flatMap(courseActivities).filter(({ activity }) => activity.is_required);
   const completed = required.filter(({ activity }) => isComplete(data.activityProgress.find((row) => row.activity === activity.id))).length;
   const overall = required.length ? Math.round((completed / required.length) * 100) : 0;
+  const started = data.activityProgress.length > 0;
 
   return (
     <div className="flex flex-col gap-9">
       <PageHeading
         eyebrow={`${greeting()}, ${firstName}`}
-        title="Pick up where you left off."
-        description="Your assigned courses, progress, and next activity are kept together here."
+        title={started ? "Pick up where you left off." : "Let’s start learning."}
+        description={started ? "Your courses, progress and next activity, all in one place." : "Your courses are ready. Start with the first activity below."}
         action={
           <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
             <CheckCircle2 className="size-4" aria-hidden="true" />
@@ -132,9 +133,9 @@ export function LearnerDashboard() {
           <section className="grid gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,.75fr)]" aria-label="Continue learning">
             <Card>
               <CardHeader>
-                <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-brand-strong">
+                <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-brand-teal-strong">
                   <BookOpen className="size-4" aria-hidden="true" />
-                  Continue learning
+                  {started ? "Continue learning" : "Your first activity"}
                 </p>
                 {continueTarget ? (
                   <>
@@ -157,7 +158,7 @@ export function LearnerDashboard() {
                   <CardFooter>
                     <Button asChild size="lg">
                       <Link href={`/learn/courses/${continueTarget.course.id}/activities/${continueTarget.activity.id}`}>
-                        Resume activity
+                        {started ? "Resume activity" : "Start activity"}
                         <ArrowRight data-icon="inline-end" />
                       </Link>
                     </Button>

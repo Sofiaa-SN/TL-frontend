@@ -1,5 +1,7 @@
 "use client";
 
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { toast } from "@/components/ui/toast";
 import Link from "next/link";
 import { ArrowRight, Download, History, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -14,6 +16,7 @@ export function ApplicationsView() {
   const [items, setItems] = useState<LearnerApplication[] | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
+  const [confirm, confirmDialog] = useConfirm();
   const load = useCallback(async () => {
     setError("");
     try { setItems(await learnerApi.applications()); }
@@ -22,12 +25,20 @@ export function ApplicationsView() {
   useEffect(() => { void load(); }, [load]);
 
   async function withdraw(application: LearnerApplication) {
-    if (!window.confirm(`Withdraw your application for ${application.opportunity_title}?`)) return;
+    const confirmed = await confirm({
+      title: "Withdraw this application?",
+      description: `Your application for ${application.opportunity_title} will be withdrawn. You can’t undo this.`,
+      confirmLabel: "Withdraw application",
+      cancelLabel: "Keep application",
+      destructive: true,
+    });
+    if (!confirmed) return;
     setBusy(application.id);
     setError("");
     try {
       const updated = await learnerApi.withdrawApplication(application.id);
       setItems((current) => current?.map((item) => item.id === updated.id ? updated : item) || null);
+      toast.success("Application withdrawn.");
     } catch (caught) { setError(caught instanceof LearnerApiError ? caught.message : "The application could not be withdrawn."); }
     finally { setBusy(""); }
   }
@@ -52,9 +63,10 @@ export function ApplicationsView() {
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeading eyebrow="Your progress" title="My applications" description="See every opportunity you applied to through Tella and follow its current status." action={<Button render={<Link href="/learn/opportunities" />} nativeButton={false} variant="outline">Find opportunities</Button>} />
+      {confirmDialog}
+      <PageHeading eyebrow="Your progress" title="My applications" description="See every opportunity you applied to through Sofiaa and follow its current status." action={<Button render={<Link href="/learn/opportunities" />} nativeButton={false} variant="outline">Find opportunities</Button>} />
       {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</div>}
-      {!items.length ? <EmptyState title="No applications yet" description="Applications submitted through Tella will appear here. External employer applications are not tracked." action={<Button render={<Link href="/learn/opportunities" />} nativeButton={false}>Browse opportunities</Button>} /> : (
+      {!items.length ? <EmptyState title="No applications yet" description="Applications submitted through Sofiaa will appear here. External employer applications are not tracked." action={<Button render={<Link href="/learn/opportunities" />} nativeButton={false}>Browse opportunities</Button>} /> : (
         <div className="divide-y border-y">
           {items.map((application) => (
             <article key={application.id} className="grid gap-4 py-6 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:px-2">

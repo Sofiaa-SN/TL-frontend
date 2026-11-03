@@ -57,17 +57,17 @@ export function LoginForm({ auth0Available = false }: { auth0Available?: boolean
         <div className="mb-8 flex items-center justify-center gap-3 text-lg font-semibold tracking-tight">
           <span
             aria-hidden="true"
-            className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground"
+            className="grid size-9 place-items-center rounded-lg bg-primary font-heading text-primary-foreground"
           >
-            T
+            S
           </span>
-          Tella Staff
+          Sofiaa Staff
         </div>
 
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">
-              <h1 id="staff-login-title">Sign in to Tella</h1>
+              <h1 id="staff-login-title">Sign in to Sofiaa</h1>
             </CardTitle>
             <CardDescription>
               Use your staff account to continue to your assigned workspace.
