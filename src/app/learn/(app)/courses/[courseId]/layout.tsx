@@ -1,6 +1,4 @@
-import { CourseChatbot } from "@/components/learner/course-chatbot";
-import { CourseHelpDock } from "@/components/learner/course-help-dock";
-import { CourseSupportChat } from "@/components/learner/course-support-chat";
+import { CourseHelp } from "@/components/learner/course-help";
 
 export default async function LearnerCourseLayout({
   children,
@@ -13,10 +11,7 @@ export default async function LearnerCourseLayout({
   return (
     <>
       {children}
-      <CourseHelpDock>
-        <CourseSupportChat courseId={courseId} />
-        <CourseChatbot courseId={courseId} />
-      </CourseHelpDock>
+      <CourseHelp key={courseId} courseId={courseId} />
     </>
   );
 }

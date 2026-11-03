@@ -116,9 +116,18 @@ describe("data-driven experiment renderer", () => {
     const view = render(<ExperimentRenderer activity={experiment({ renderer: "graphspace", renderer_config: { path: "/graphspace/index_3.html", heading: "Decision surface", message: "Compare value and risk." } })} state={{}} onStateChange={vi.fn()} onTrackedProgress={vi.fn()} />);
     const frame = view.container.querySelector("iframe");
     expect(screen.getByText("Decision surface")).toBeDefined();
-    expect(frame?.getAttribute("src")).toBe("/graphspace/index_3.html");
+    expect(frame?.getAttribute("src")).toBe("/graphspace/index_3.html#theme=light");
     expect(frame?.getAttribute("loading")).toBe("lazy");
     expect(frame?.getAttribute("sandbox")).not.toContain("allow-top-navigation");
+    expect(frame?.getAttribute("sandbox")).not.toContain("allow-same-origin");
+  });
+
+  it("tells GraphSpace when its tour was already seen", () => {
+    const stored: Record<string, string> = { "sofiaa-graphspace": JSON.stringify({ tourSeen: true, theme: "dark" }) };
+    vi.stubGlobal("localStorage", { getItem: (key: string) => stored[key] ?? null, setItem: (key: string, value: string) => { stored[key] = value; } });
+    const view = render(<ExperimentRenderer activity={experiment({ renderer: "graphspace", renderer_config: {} })} state={{}} onStateChange={vi.fn()} onTrackedProgress={vi.fn()} />);
+    expect(view.container.querySelector("iframe")?.getAttribute("src")).toBe("/graphspace/index_3.html#tour=seen&theme=dark");
+    vi.unstubAllGlobals();
   });
 
   it("renders an admin-posted linear-programming workspace without a material ID", () => {

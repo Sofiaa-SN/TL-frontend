@@ -78,6 +78,7 @@ export function isAllowedStaffProxyRequest(method: string, path: string) {
   }
   if (clean === "auth/permissions") return method === "GET";
   if (clean === "auth/staff-summary") return method === "GET";
+  if (clean === "reports/overview") return method === "GET";
   if (clean === "course-support/conversations") return method === "GET";
   if (new RegExp(`^course-support/conversations/${UUID}/messages$`).test(clean)) return method === "GET";
   if (new RegExp(`^course-support/conversations/${UUID}/(read|close)$`).test(clean)) return method === "POST";

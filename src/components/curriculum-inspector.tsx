@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ActivityCompletionEditor, ChapterCompletionEditor } from "@/components/completion-rule-editor";
-import { StructuredJsonEditor } from "@/components/structured-json-editor";
+import { ActivityContentEditor } from "@/components/content-editors";
 import { ApiError, curriculumApi } from "@/lib/curriculum/api";
 import { resourceEndpoint, type SelectedResource } from "@/lib/curriculum/tree";
 import { isJsonObject, type JsonObject } from "@/lib/structured-json";
 import type { Activity, Chapter, Course, CourseVersion, Selection, Status, Subtopic } from "@/lib/curriculum/types";
+import { SimpleSelect } from "@/components/ui/simple-select";
 
 const statuses: Status[] = ["DRAFT", "IN_REVIEW", "APPROVED", "PUBLISHED", "ARCHIVED"];
 const activityTypes = ["CONCEPT_VIDEO", "EXPERIMENT", "CONCEPT_OVERVIEW", "OBSERVE_LEARN_PRACTICE", "HOMEWORK", "INTERACTIVE_WORKSHOP", "SIMULATION", "READING", "PDF", "INTERACTIVE", "ASSIGNMENT", "PROJECT", "LIVE_CLASS", "FLASHCARD"];
@@ -83,11 +84,11 @@ export function CurriculumInspector({ course, selection, resource, canPublish, o
     {localError && <Alert variant="destructive" role="alert"><AlertDescription>{localError}{partialFailure && <Button type="button" size="sm" variant="outline" className="mt-3 flex" onClick={retryContent} disabled={saving}>Retry content save</Button>}</AlertDescription></Alert>}
     <div className="grid min-w-0 gap-5 border-y border-border/80 bg-card py-6 md:grid-cols-2">
       {selection.kind === "version" ? <Field label="Version name" name="name" defaultValue={(resource as CourseVersion).name} required /> : <Field label="Title" name="title" defaultValue={(resource as Chapter | Subtopic | Activity).title} required />}
-      <div className="space-y-2"><Label htmlFor="status">Status</Label><select id="status" name="status" defaultValue={resource.status} className="h-9 w-full rounded-lg border px-3 text-sm">{statuses.map(status => <option key={status}>{status}</option>)}</select></div>
+      <div className="space-y-2"><Label htmlFor="status">Status</Label><SimpleSelect id="status" name="status" defaultValue={resource.status} onValueChange={() => changed()} options={statuses.map(status => ({ value: status, label: titleCase(status) }))} /></div>
       {selection.kind === "version" ? <Field label="Version number" name="version_number" type="number" defaultValue={(resource as CourseVersion).version_number} /> : <><div className="space-y-2 md:col-span-2"><Label htmlFor="description">Description</Label><Textarea id="description" name="description" defaultValue={(resource as Chapter | Subtopic | Activity).description} /></div><Field label="Estimated minutes" name="estimated_minutes" type="number" min={0} defaultValue={(resource as Chapter | Subtopic | Activity).estimated_minutes} /><label className="flex min-h-10 items-center gap-2 self-end text-sm"><input name="is_required" type="checkbox" defaultChecked={(resource as Chapter | Subtopic | Activity).is_required} />Required</label></>}
       {selection.kind === "chapter" && <><Field label="Slug" name="slug" defaultValue={(resource as Chapter).slug} /><Field label="Chapter number" name="chapter_number" type="number" defaultValue={(resource as Chapter).chapter_number} /><ChapterCompletionEditor value={completionRule} onChange={updateRule} onValidityChange={valid => { setCompletionValid(valid); if (!valid) changed(); }} /></>}
       {selection.kind === "subtopic" && <><Field label="Slug" name="slug" defaultValue={(resource as Subtopic).slug} /><div className="space-y-2 md:col-span-2"><Label htmlFor="learning_objectives">Learning objectives, one per line</Label><Textarea id="learning_objectives" name="learning_objectives" defaultValue={(resource as Subtopic).learning_objectives.join("\n")} /></div></>}
-      {activity && <><div className="space-y-2"><Label htmlFor="activity_type">Activity type</Label><select id="activity_type" name="activity_type" value={activityType} className="h-9 w-full rounded-lg border px-3 text-sm" onChange={event => { setActivityType(event.target.value); changed(); }}>{activityTypes.map(type => <option key={type}>{type}</option>)}</select></div><ActivityCompletionEditor activityType={activityType} value={completionRule} onChange={updateRule} onValidityChange={valid => { setCompletionValid(valid); if (!valid) changed(); }} /><Field label="Content type" name="content_type" defaultValue={activity.content_record?.content_type || "application/json"} required /><div className="md:col-span-2"><StructuredJsonEditor id="activity-content" label="Structured activity content" description="Build nested learner content without writing JSON. Dedicated video, experiment, and practice records are managed separately." value={content} onChange={updateContent} onValidityChange={valid => { setContentValid(valid); if (!valid) changed(); }} /></div></>}
+      {activity && <><div className="space-y-2"><Label htmlFor="activity_type">Activity type</Label><SimpleSelect id="activity_type" name="activity_type" value={activityType} onValueChange={value => { setActivityType(value); changed(); }} options={activityTypes.map(type => ({ value: type, label: titleCase(type) }))} /></div><ActivityCompletionEditor activityType={activityType} value={completionRule} onChange={updateRule} onValidityChange={valid => { setCompletionValid(valid); if (!valid) changed(); }} /><Field label="Content type" name="content_type" defaultValue={activity.content_record?.content_type || "application/json"} required /><div className="md:col-span-2"><ActivityContentEditor value={content} onChange={updateContent} onValidityChange={valid => { setContentValid(valid); if (!valid) changed(); }} /></div></>}
     </div>
     <div className="fixed inset-x-0 bottom-0 z-20 flex flex-col-reverse gap-2 border-t bg-card/95 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:flex-row sm:justify-end lg:static lg:flex-row lg:justify-between lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
       <Button type="button" variant="destructive" className="min-h-11 sm:min-h-8" onClick={remove}><Trash2 />Delete</Button>
@@ -98,3 +99,5 @@ export function CurriculumInspector({ course, selection, resource, canPublish, o
 }
 
 function Field({ label, name, ...props }: { label: string; name: string } & React.ComponentProps<typeof Input>) { return <div className="min-w-0 space-y-2"><Label htmlFor={name}>{label}</Label><Input id={name} name={name} {...props} /></div>; }
+
+function titleCase(value: string) { return value.charAt(0) + value.slice(1).toLowerCase().replaceAll("_", " "); }

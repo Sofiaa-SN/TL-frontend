@@ -44,7 +44,11 @@ const EngineRenderer = (() => {
 
     scene = new THREE.Scene();
     const isSoftware = detectSoftwareRenderer();
+    // Keep the pre-r152 look: colours are used as authored and vertex colours are not
+    // re-encoded on output.
+    if (THREE.ColorManagement) THREE.ColorManagement.enabled = false;
     rendererGL = new THREE.WebGLRenderer({ antialias: !isSoftware, alpha:false, powerPreference:'high-performance' });
+    if ('outputColorSpace' in rendererGL) rendererGL.outputColorSpace = THREE.LinearSRGBColorSpace;
     const lowPower = (navigator.hardwareConcurrency || 4) <= 4;
     rendererGL.setPixelRatio(Math.min(isSoftware || lowPower ? 1 : 1.5, window.devicePixelRatio||1));
     host.appendChild(rendererGL.domElement);
@@ -89,10 +93,12 @@ const EngineRenderer = (() => {
 
   function buildLights(){
     lightGroup.clear();
-    const amb = new THREE.AmbientLight(0xffffff, 0.6);
-    const key = new THREE.DirectionalLight(0xffffff, 0.95);
+    // three r155+ uses physically based light units; scaling by PI matches the legacy intensities.
+    const unit = Math.PI;
+    const amb = new THREE.AmbientLight(0xffffff, 0.6 * unit);
+    const key = new THREE.DirectionalLight(0xffffff, 0.95 * unit);
     key.position.set(18,-14,26);
-    const fill = new THREE.DirectionalLight(0xffffff, 0.28);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.28 * unit);
     fill.position.set(-16,18,-10);
     lightGroup.add(amb, key, fill);
   }

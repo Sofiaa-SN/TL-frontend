@@ -15,6 +15,7 @@ import { mergeSupportMessages } from "@/lib/support-chat/reducer";
 import { SupportSocketClient } from "@/lib/support-chat/socket-client";
 import type { SupportConnectionState, SupportConversation, SupportMessage, SupportServerEvent } from "@/lib/support-chat/types";
 import { cn } from "@/lib/utils";
+import { SimpleSelect } from "@/components/ui/simple-select";
 
 type PendingMessage = {
   conversationId: string;
@@ -300,9 +301,9 @@ export function SupportChatWorkspace() {
               <Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-8" placeholder="Search learner or course" aria-label="Search chats" />
             </label>
             <div className="grid grid-cols-3 gap-2">
-              <select aria-label="Filter by status" value={status} onChange={(event) => setStatus(event.target.value)} className="h-9 rounded-lg border border-input bg-card px-2 text-xs"><option value="ALL">All status</option><option value="OPEN">Open</option><option value="CLOSED">Closed</option></select>
-              <select aria-label="Filter by course" value={course} onChange={(event) => setCourse(event.target.value)} className="h-9 rounded-lg border border-input bg-card px-2 text-xs"><option value="ALL">All courses</option>{courses.map((item) => <option key={item.id} value={item.id}>{item.code}</option>)}</select>
-              <select aria-label="Filter by group" value={group} onChange={(event) => setGroup(event.target.value)} className="h-9 rounded-lg border border-input bg-card px-2 text-xs"><option value="ALL">All groups</option>{groups.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+              <SimpleSelect aria-label="Filter by status" size="sm" className="text-xs" value={status} onValueChange={setStatus} options={[{ value: "ALL", label: "All status" }, { value: "OPEN", label: "Open" }, { value: "CLOSED", label: "Closed" }]} />
+              <SimpleSelect aria-label="Filter by course" size="sm" className="text-xs" value={course} onValueChange={setCourse} options={[{ value: "ALL", label: "All courses" }, ...courses.map((item) => ({ value: item.id, label: item.code }))]} />
+              <SimpleSelect aria-label="Filter by group" size="sm" className="text-xs" value={group} onValueChange={setGroup} options={[{ value: "ALL", label: "All groups" }, ...groups.map((item) => ({ value: item.id, label: item.name }))]} />
             </div>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">

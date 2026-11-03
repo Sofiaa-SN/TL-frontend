@@ -23,6 +23,8 @@ export type StaffFieldDefinition = {
   nullable?: boolean;
   defaultValue?: unknown;
   help?: string;
+  /** Structured form editor for a JSON field; raw JSON stays available inside it. */
+  editor?: "activity-content" | "experiment";
   options?: FieldOption[];
   relation?: RelationDefinition;
 };
@@ -213,11 +215,11 @@ export const staffResources: Record<string, StaffResourceDefinition> = {
       },
       {
         key: "content",
-        label: "Content JSON",
+        label: "Learner content",
         type: "json",
+        editor: "activity-content",
         defaultValue: {},
         required: true,
-        help: "Use a valid JSON object understood by the learner renderer.",
       },
     ],
     columns: [
@@ -327,8 +329,9 @@ export const staffResources: Record<string, StaffResourceDefinition> = {
       },
       {
         key: "configuration",
-        label: "Configuration JSON",
+        label: "Experiment setup",
         type: "json",
+        editor: "experiment",
         defaultValue: {},
         required: true,
       },

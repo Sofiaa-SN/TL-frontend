@@ -1,8 +1,8 @@
-import { ResourceHub } from "@/components/staff/resource-hub";
+import { ReportsWorkspace } from "@/components/staff/reports-workspace";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Reports" };
 
 export default function OperationsPage() {
-  return <ResourceHub section="operations" />;
+  return <ReportsWorkspace />;
 }

@@ -129,12 +129,13 @@ function ResourceCard({ resource, access }: { resource: StaffResourceDefinition;
   );
 }
 
-export function ResourceHub({ section }: { section: StaffResourceDefinition["section"] }) {
+/** `embedded` renders only the record cards, for use inside another page. */
+export function ResourceHub({ section, embedded = false }: { section: StaffResourceDefinition["section"]; embedded?: boolean }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const copy = sectionCopy[section];
   const resources = resourcesBySection(section).filter((resource) => user?.permissions.includes(resource.viewPermission));
-  const single = !loading && resources.length === 1 ? resources[0] : null;
+  const single = !embedded && !loading && resources.length === 1 ? resources[0] : null;
 
   // A hub with one destination is just an extra click.
   useEffect(() => {
@@ -142,11 +143,12 @@ export function ResourceHub({ section }: { section: StaffResourceDefinition["sec
   }, [router, single]);
 
   if (loading || single) {
+    const Wrapper = embedded ? "div" : "main";
     return (
-      <main className="mx-auto grid max-w-7xl gap-4 p-4 md:grid-cols-2 md:p-8" role="status">
+      <Wrapper className={embedded ? "grid gap-4 md:grid-cols-2" : "mx-auto grid max-w-7xl gap-4 p-4 md:grid-cols-2 md:p-8"} role="status">
         <span className="sr-only">Loading</span>
         {[0, 1, 2, 3].map((item) => <Skeleton key={item} className="h-36 rounded-xl" />)}
-      </main>
+      </Wrapper>
     );
   }
 
@@ -157,6 +159,15 @@ export function ResourceHub({ section }: { section: StaffResourceDefinition["sec
   };
   const primary = resources.filter((resource) => !ADVANCED.has(resource.key));
   const advanced = resources.filter((resource) => ADVANCED.has(resource.key));
+
+  if (embedded) {
+    if (resources.length === 0) return null;
+    return (
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {resources.map((resource) => <ResourceCard key={resource.key} resource={resource} access={accessFor(resource)} />)}
+      </div>
+    );
+  }
 
   return (
     <main className="mx-auto flex max-w-7xl flex-col gap-8 p-4 md:p-8">

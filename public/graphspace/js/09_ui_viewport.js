@@ -89,13 +89,17 @@ const ViewportUI = (() => {
     else next = cur==='dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', next);
     try{ localStorage.setItem('gs3d-theme', next); }catch(e){}
+    try{ if(window.parent !== window) window.parent.postMessage({ source: 'graphspace', type: 'theme', value: next }, '*'); }catch(e){}
     EngineRenderer.onThemeChange();
   }
   function applyStoredTheme(){
-    try{
-      const saved = localStorage.getItem('gs3d-theme');
-      if(saved){ document.documentElement.setAttribute('data-theme', saved); }
-    }catch(e){}
+    let saved = null;
+    try{ saved = localStorage.getItem('gs3d-theme'); }catch(e){}
+    // The host page passes its theme as "#theme=dark|light" when storage is unavailable.
+    if(!saved){
+      try{ saved = new URLSearchParams(location.hash.slice(1)).get('theme'); }catch(e){}
+    }
+    if(saved === 'dark' || saved === 'light'){ document.documentElement.setAttribute('data-theme', saved); }
   }
 
   return { init };

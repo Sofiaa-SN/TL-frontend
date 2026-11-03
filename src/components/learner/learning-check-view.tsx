@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, BookOpenCheck, CheckCircle2, CircleX, Clock3, Ro
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { FieldGroup, FieldLegend, FieldSet } from "@/components/ui/field";
+import { FieldGroup, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
@@ -199,7 +199,7 @@ export function LearningCheckView({ courseId, checkId }: { courseId: string; che
 
         {latestResult && <ResultSummary result={latestResult} check={check} questions={orderedQuestions} />}
 
-        {remaining > 0 && (
+        {remaining > 0 && Number(latestResult?.percentage ?? 0) < 100 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><ShieldCheck className="size-4 text-brand-teal" />{latestResult ? (latestResult.passed ? "Want to improve your score?" : "Ready to try again?") : "Before you begin"}</CardTitle>
@@ -245,10 +245,10 @@ export function LearningCheckView({ courseId, checkId }: { courseId: string; che
               key={item.id}
               id={`question-${item.id}`}
               tabIndex={-1}
+              aria-labelledby={promptId}
               aria-invalid={missing.has(item.question) || undefined}
               className={cn("scroll-mt-24 rounded-xl border bg-card p-5 shadow-xs outline-none sm:p-6", missing.has(item.question) && "border-destructive ring-2 ring-destructive/20")}
             >
-              <FieldLegend className="sr-only">{item.question_detail.question_text}</FieldLegend>
               <div className="flex items-start gap-3">
                 <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-secondary text-xs font-semibold tabular-nums text-secondary-foreground">{index + 1}</span>
                 <div className="flex flex-col gap-1">

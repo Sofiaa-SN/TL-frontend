@@ -272,8 +272,19 @@ const GraphSpaceTour = (() => {
     goTo(0);
   }
 
+  // Embedded in a sandboxed (opaque-origin) iframe, localStorage is unavailable, so the
+  // host page passes "#tour=seen" and is told when the tour finishes.
+  function hostSaysSeen() {
+    try { return new URLSearchParams(location.hash.slice(1)).get('tour') === 'seen'; } catch (e) { return false; }
+  }
+
+  function notifyHost(type, value) {
+    try { if (window.parent !== window) window.parent.postMessage({ source: 'graphspace', type: type, value: value }, '*'); } catch (e) {}
+  }
+
   function end() {
     try { localStorage.setItem(SEEN_KEY, '1'); } catch (e) {}
+    notifyHost('tour-seen', true);
     if (els.backdrop) {
       els.backdrop.classList.remove('show');
       els.spot.classList.remove('show', 'hidden');
@@ -294,6 +305,7 @@ const GraphSpaceTour = (() => {
   function maybeAutoStart() {
     let seen = false;
     try { seen = localStorage.getItem(SEEN_KEY) === '1'; } catch (e) {}
+    seen = seen || hostSaysSeen();
     if (!seen) setTimeout(start, 700);
   }
 

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SupportConversation, SupportMessage, SupportServerEvent } from "@/lib/support-chat/types";
-import { CourseSupportChat } from "./course-support-chat";
+import { CourseHelp } from "./course-help";
 
 const api = vi.hoisted(() => ({
   availability: vi.fn(),
@@ -21,6 +21,11 @@ const socket = vi.hoisted(() => ({
 vi.mock("@/lib/support-chat/api", async (original) => ({
   ...(await original<typeof import("@/lib/support-chat/api")>()),
   supportChatApi: api,
+}));
+const learner = vi.hoisted(() => ({ course: vi.fn() }));
+vi.mock("@/lib/learner/api", async (original) => ({
+  ...(await original<typeof import("@/lib/learner/api")>()),
+  learnerApi: learner,
 }));
 vi.mock("@/lib/support-chat/socket-client", () => ({
   SupportSocketClient: class {
@@ -69,6 +74,7 @@ beforeEach(() => {
   api.messages.mockReset().mockResolvedValue({ results: [teacherMessage], has_more: false, next_after_sequence: 1 });
   api.markRead.mockReset().mockResolvedValue({ conversation_id: conversation.id, sequence: 1 });
   api.ticket.mockReset();
+  learner.course.mockReset().mockResolvedValue({ id: "course-1", chatbot_available: false });
   socket.send.mockReset();
   socket.sendResult = true;
   socket.emit = undefined;
@@ -76,16 +82,16 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe("CourseSupportChat", () => {
+describe("Teacher support", () => {
   it("hides the launcher when no conversation can be started or read", async () => {
     api.availability.mockResolvedValueOnce({ available: false, conversation: null });
-    render(<CourseSupportChat courseId="course-1" />);
+    render(<CourseHelp courseId="course-1" />);
     await waitFor(() => expect(api.availability).toHaveBeenCalledWith("course-1"));
     expect(screen.queryByRole("button", { name: /Ask a teacher/ })).toBeNull();
   });
 
   it("loads persisted history, marks it read, and renders markup as inert text", async () => {
-    render(<CourseSupportChat courseId="course-1" />);
+    render(<CourseHelp courseId="course-1" />);
     await userEvent.click(await screen.findByRole("button", { name: /Ask a teacher/ }));
 
     expect(await screen.findByText(teacherMessage.content)).toBeDefined();
@@ -97,7 +103,7 @@ describe("CourseSupportChat", () => {
 
   it("keeps a message visibly pending until the server acknowledges it", async () => {
     api.messages.mockResolvedValueOnce({ results: [], has_more: false, next_after_sequence: 0 });
-    render(<CourseSupportChat courseId="course-1" />);
+    render(<CourseHelp courseId="course-1" />);
     await userEvent.click(await screen.findByRole("button", { name: /Ask a teacher/ }));
     await userEvent.type(await screen.findByLabelText("Message your teacher"), "Please explain question four");
     await userEvent.click(screen.getByRole("button", { name: "Send to teacher" }));
@@ -118,7 +124,7 @@ describe("CourseSupportChat", () => {
   it("shows a retry action when a message cannot reach a live socket", async () => {
     socket.sendResult = false;
     api.messages.mockResolvedValueOnce({ results: [], has_more: false, next_after_sequence: 0 });
-    render(<CourseSupportChat courseId="course-1" />);
+    render(<CourseHelp courseId="course-1" />);
     await userEvent.click(await screen.findByRole("button", { name: /Ask a teacher/ }));
     await userEvent.type(await screen.findByLabelText("Message your teacher"), "Can you help?");
     await userEvent.click(screen.getByRole("button", { name: "Send to teacher" }));
@@ -128,9 +134,19 @@ describe("CourseSupportChat", () => {
 
   it("keeps expired-enrollment history readable without a composer", async () => {
     api.availability.mockResolvedValueOnce({ available: false, conversation: { ...conversation, can_send: false } });
-    render(<CourseSupportChat courseId="course-1" />);
+    render(<CourseHelp courseId="course-1" />);
     await userEvent.click(await screen.findByRole("button", { name: /Ask a teacher/ }));
     expect(await screen.findByText(/no longer active/)).toBeDefined();
     expect(screen.queryByLabelText("Message your teacher")).toBeNull();
+  });
+
+  it("combines both helpers behind one launcher with tabs", async () => {
+    learner.course.mockResolvedValue({ id: "course-1", chatbot_available: true });
+    render(<CourseHelp courseId="course-1" />);
+    await userEvent.click(await screen.findByRole("button", { name: /Get help/ }));
+    expect(screen.getByRole("tab", { name: /Ask a teacher/ }).getAttribute("aria-selected")).toBe("true");
+    await userEvent.click(screen.getByRole("tab", { name: /Course tutor/ }));
+    expect(screen.getByLabelText("Message course tutor")).toBeDefined();
+    expect(screen.getByRole("dialog").getAttribute("aria-modal")).toBe("false");
   });
 });

@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OpportunityList } from "./opportunity-list";
 import { staffOpportunityApi } from "@/lib/opportunities/staff-api";
+import { chooseOption } from "@/test/choose-option";
 
 const auth = vi.hoisted(() => ({ permissions: ["progress.view_careeropportunity", "progress.add_careeropportunity"] }));
 vi.mock("@/components/auth-provider", () => ({ useAuth: () => ({ user: { permissions: auth.permissions }, loading: false }) }));
@@ -14,8 +15,8 @@ describe("OpportunityList", () => {
   it("passes combined filters to the API", async () => {
     render(<OpportunityList />);
     await waitFor(() => expect(staffOpportunityApi.list).toHaveBeenCalled());
-    fireEvent.change(screen.getByLabelText("Employment type"), { target: { value: "INTERNSHIP" } });
-    fireEvent.change(screen.getByLabelText("Workplace mode"), { target: { value: "REMOTE" } });
+    await chooseOption("Employment type", "Internship");
+    await chooseOption("Workplace mode", "Remote");
     await waitFor(() => expect(staffOpportunityApi.list).toHaveBeenLastCalledWith(expect.objectContaining({ employment_type: "INTERNSHIP", workplace_mode: "REMOTE" })));
   });
 

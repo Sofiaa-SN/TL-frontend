@@ -9,6 +9,46 @@ export type StaffSummaryRecord = {
   href: string;
 };
 
+export type ReportsOverview = {
+  generated_at: string;
+  inactive_after_days: number;
+  totals: {
+    learners: number;
+    active_enrollments: number;
+    completed_enrollments: number;
+    completion_rate: number;
+    average_progress: number;
+    check_attempts: number;
+    check_pass_rate: number | null;
+    average_check_score: number | null;
+    learning_hours: number | null;
+  };
+  courses: {
+    id: string;
+    name: string;
+    code: string;
+    enrolled: number;
+    completed: number;
+    in_progress: number;
+    not_started: number;
+    average_progress: number;
+    check_attempts: number;
+    check_pass_rate: number | null;
+    average_check_score: number | null;
+  }[];
+  activity: { week: string; learners: number; activities: number }[];
+  attention: {
+    enrollment_id: string;
+    student_id: string;
+    student: string;
+    email: string;
+    course: string;
+    progress: number;
+    last_seen: string | null;
+    enrolled_at: string;
+  }[];
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const isForm = init?.body instanceof FormData;
   const response = await fetch(`/api/staff/${path.replace(/^\//, "")}`, {
@@ -49,4 +89,5 @@ export const staffApi = {
     }),
   summary: () =>
     request<{ records: StaffSummaryRecord[] }>("auth/staff-summary"),
+  reports: () => request<ReportsOverview>("reports/overview"),
 };

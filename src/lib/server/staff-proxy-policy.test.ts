@@ -18,6 +18,8 @@ describe("staff proxy allowlist", () => {
       isAllowedStaffProxyRequest("PATCH", "auth/groups/3/permissions"),
     ).toBe(true);
     expect(isAllowedStaffProxyRequest("GET", "auth/staff-summary")).toBe(true);
+    expect(isAllowedStaffProxyRequest("GET", "reports/overview")).toBe(true);
+    expect(isAllowedStaffProxyRequest("POST", "reports/overview")).toBe(false);
     expect(isAllowedStaffProxyRequest("GET", "assessment-attempts")).toBe(
       true,
     );

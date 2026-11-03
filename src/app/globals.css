@@ -90,11 +90,12 @@
   --border: #e1e5f0;
   --input: #cfd6e6;
   --ring: var(--brand-indigo);
-  --chart-1: #0920a0;
+  /* Categorical chart order, validated for lightness band, CVD separation and contrast. */
+  --chart-1: #5b6cf0;
   --chart-2: #029f9f;
-  --chart-3: #5b6cf0;
-  --chart-4: #7fd3cf;
-  --chart-5: #f0a63c;
+  --chart-3: #c47410;
+  --chart-4: #c2489a;
+  --chart-5: #4f9d3a;
   --radius: 0.75rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #1a2152;
@@ -137,11 +138,11 @@
   --border: #222a5c;
   --input: #2c356e;
   --ring: #8c9bff;
-  --chart-1: #8c9bff;
-  --chart-2: #2fc9c0;
-  --chart-3: #c3cbff;
-  --chart-4: #8fe6e0;
-  --chart-5: #f5bd6a;
+  --chart-1: #6c7ef5;
+  --chart-2: #16a39c;
+  --chart-3: #c27a1c;
+  --chart-4: #c25a9e;
+  --chart-5: #4f9a3c;
   --sidebar: #0a0f2e;
   --sidebar-foreground: #dfe3ff;
   --sidebar-primary: #8c9bff;
@@ -261,6 +262,17 @@
   background:
     radial-gradient(38rem 18rem at 100% 0%, color-mix(in oklab, #2fc9c0 30%, transparent), transparent 70%),
     linear-gradient(135deg, #18237a 0%, #101860 55%, #0a0f3e 100%);
+}
+
+/* Keep course content readable beside the docked help panel where there is room; narrower screens overlay it. */
+@media (min-width: 80rem) {
+  #main-content {
+    transition: padding-right 200ms ease;
+  }
+
+  html[data-help-panel="open"] #main-content {
+    padding-right: 27rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

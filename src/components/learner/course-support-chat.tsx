@@ -1,12 +1,11 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { MessageCircleQuestion, RefreshCcw, Send } from "lucide-react";
+import { RefreshCcw, Send } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { SupportApiError, supportChatApi } from "@/lib/support-chat/api";
 import { mergeSupportMessages } from "@/lib/support-chat/reducer";
@@ -38,13 +37,19 @@ function senderName(message: SupportMessage) {
   return `${message.sender.first_name} ${message.sender.last_name}`.trim() || "Course staff";
 }
 
-export function CourseSupportChat({ courseId }: { courseId: string }) {
-  const [available, setAvailable] = useState(false);
-  const [conversation, setConversation] = useState<SupportConversation | null>(null);
+/** Conversation body for teacher support. Hosted inside the course help panel. */
+export function CourseSupportPanel({ courseId, available, initialConversation, active, onUnreadChange }: {
+  courseId: string;
+  available: boolean;
+  initialConversation: SupportConversation | null;
+  active: boolean;
+  onUnreadChange: (count: number) => void;
+}) {
+  const [conversation, setConversation] = useState<SupportConversation | null>(initialConversation);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [pending, setPending] = useState<PendingMessage[]>([]);
   const [connection, setConnection] = useState<SupportConnectionState>("idle");
-  const [open, setOpen] = useState(false);
+  const open = active;
   const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
@@ -60,22 +65,16 @@ export function CourseSupportChat({ courseId }: { courseId: string }) {
     });
   }, []);
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const unread = conversation?.unread_count ?? 0;
+
   useEffect(() => {
-    let active = true;
-    setAvailable(false);
-    setConversation(null);
-    replaceMessages([]);
-    setPending([]);
-    setError("");
-    supportChatApi.availability(courseId)
-      .then((result) => {
-        if (!active) return;
-        setAvailable(result.available);
-        setConversation(result.conversation);
-      })
-      .catch(() => active && setError("Teacher support is temporarily unavailable."));
-    return () => { active = false; };
-  }, [courseId, replaceMessages]);
+    onUnreadChange(unread);
+  }, [onUnreadChange, unread]);
+
+  useEffect(() => {
+    if (open) textareaRef.current?.focus();
+  }, [open]);
 
   const recover = useCallback(async (id: string, afterSequence: number) => {
     let cursor = afterSequence;
@@ -162,19 +161,17 @@ export function CourseSupportChat({ courseId }: { courseId: string }) {
     if (open) endRef.current?.scrollIntoView({ block: "nearest" });
   }, [messages, open, pending]);
 
-  async function changeOpen(nextOpen: boolean) {
-    setOpen(nextOpen);
-    if (!nextOpen || conversation || !available) return;
+  useEffect(() => {
+    if (!open || conversation || !available) return;
+    let cancelled = false;
     setLoading(true);
     setError("");
-    try {
-      setConversation(await supportChatApi.openConversation(courseId));
-    } catch (caught) {
-      setError(caught instanceof SupportApiError ? caught.message : "Could not start teacher support.");
-    } finally {
-      setLoading(false);
-    }
-  }
+    supportChatApi.openConversation(courseId)
+      .then((opened) => !cancelled && setConversation(opened))
+      .catch((caught) => !cancelled && setError(caught instanceof SupportApiError ? caught.message : "Could not start teacher support."))
+      .finally(() => !cancelled && setLoading(false));
+    return () => { cancelled = true; };
+  }, [available, conversation, courseId, open]);
 
   function transmit(item: PendingMessage) {
     setError("");
@@ -204,27 +201,14 @@ export function CourseSupportChat({ courseId }: { courseId: string }) {
     transmit(item);
   }
 
-  if (!available && !conversation) return null;
-
   const canSend = Boolean(conversation?.can_send);
   return (
-    <Sheet open={open} onOpenChange={(next) => void changeOpen(next)}>
-      <SheetTrigger render={<Button variant="outline" className="h-11 rounded-full bg-card px-4 shadow-lg" />}>
-        <MessageCircleQuestion data-icon="inline-start" />Ask a teacher
-        {conversation?.unread_count ? <span className="ml-1 grid size-5 place-items-center rounded-full bg-background text-xs font-semibold text-foreground" aria-label={`${conversation.unread_count} unread messages`}>{conversation.unread_count}</span> : null}
-      </SheetTrigger>
-      <SheetContent side="right" className="w-full gap-0 sm:max-w-md">
-        <SheetHeader className="border-b pr-12">
-          <div className="flex items-center gap-2">
-            <SheetTitle>Teacher support</SheetTitle>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex items-center gap-2 border-b px-4 py-2.5 text-xs text-muted-foreground">
+            <span className="min-w-0 flex-1">Shared with the staff who teach this course.</span>
             <Badge variant={connection === "live" ? "secondary" : "outline"}>{connectionCopy[connection]}</Badge>
             {connection === "offline" && <Button type="button" size="xs" variant="outline" onClick={() => socketRef.current?.reconnect()}>Reconnect</Button>}
           </div>
-          <SheetDescription>
-            Messages are shared with the staff responsible for this course.
-          </SheetDescription>
-        </SheetHeader>
-        <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4" aria-label="Teacher support conversation" aria-busy={loading}>
             {loading && messages.length === 0 ? <p className="my-auto text-center text-sm text-muted-foreground" role="status">Loading conversation…</p> : null}
             {!loading && messages.length === 0 ? (
@@ -256,7 +240,22 @@ export function CourseSupportChat({ courseId }: { courseId: string }) {
             {error ? <Alert variant="destructive" className="mb-3" role="alert"><AlertDescription>{error}</AlertDescription></Alert> : null}
             {canSend ? (
               <form onSubmit={send} className="flex items-end gap-2">
-                <Textarea aria-label="Message your teacher" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={2000} rows={2} placeholder="Write a message…" disabled={!conversation} />
+                <Textarea
+                  ref={textareaRef}
+                  aria-label="Message your teacher"
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                      event.preventDefault();
+                      event.currentTarget.form?.requestSubmit();
+                    }
+                  }}
+                  maxLength={2000}
+                  rows={2}
+                  placeholder="Write a message…"
+                  disabled={!conversation}
+                />
                 <Button type="submit" size="icon-lg" aria-label="Send to teacher" disabled={!conversation || !draft.trim()}><Send /></Button>
               </form>
             ) : (
@@ -267,7 +266,5 @@ export function CourseSupportChat({ courseId }: { courseId: string }) {
             </p>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
   );
 }

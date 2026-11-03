@@ -131,6 +131,7 @@ export const navigation: NavigationItem[] = [
     icon: ChartColumn,
     group: "Insights",
     permissions: [
+      "students.view_enrollment",
       "progress.view_activityprogress",
       "assessments.view_assessmentattempt",
       "assessments.view_assessmentanswer",
