@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { StaffOpportunity } from "@/lib/opportunities/types";
 import { EligibilityRuleEditor } from "./eligibility-rule-editor";
 import { emptyOpportunity, toInput, validateOpportunityInput } from "./opportunity-editor";
+import userEvent from "@testing-library/user-event";
 
 describe("opportunity editor contracts", () => {
   it("allows an incomplete titled draft but blocks invalid publication combinations", () => {
@@ -30,16 +31,16 @@ describe("opportunity editor contracts", () => {
     expect(input.eligibility_rules).toEqual({ version: 1, match: "ANY", conditions: [{ fact: "GROUP_GRADE", operator: "IN", values: ["11", "12"] }] });
   });
 
-  it("offers all rule types and supports add/change/remove with keyboard controls", () => {
+  it("offers all rule types and supports add/change/remove with keyboard controls", async () => {
     const onChange = vi.fn();
     const { rerender } = render(<EligibilityRuleEditor value={{ version: 1, match: "ALL", conditions: [] }} onChange={onChange} relations={{ groups: [{ id: "group-1", name: "Grade 11" }], courses: [], learningChecks: [] }} />);
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     const added = onChange.mock.calls[0][0];
     expect(added.conditions).toHaveLength(1);
     rerender(<EligibilityRuleEditor value={added} onChange={onChange} relations={{ groups: [{ id: "group-1", name: "Grade 11" }], courses: [], learningChecks: [] }} />);
-    const fact = screen.getByLabelText("Condition 1 fact") as HTMLSelectElement;
-    expect(fact.options).toHaveLength(6);
-    fireEvent.change(fact, { target: { value: "GROUP_GRADE" } });
+    await userEvent.click(screen.getByRole("combobox", { name: "Condition 1 fact" }));
+    expect(await screen.findAllByRole("option")).toHaveLength(6);
+    await userEvent.click(screen.getByRole("option", { name: "Group grade" }));
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ conditions: [expect.objectContaining({ fact: "GROUP_GRADE" })] }));
     fireEvent.click(screen.getByRole("button", { name: "Remove condition 1" }));
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ conditions: [] }));

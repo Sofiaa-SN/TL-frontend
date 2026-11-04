@@ -82,16 +82,19 @@ function GeoGebraActivity({ definition, onProgress }: { definition: Record<strin
           if (disposed) return;
           setStatus("Interactive activity ready and connected.");
           if (!names.length) return;
-          let previous = "";
+          let previous: string | null = null;
           const poll = () => {
             const values = Object.fromEntries(names.map((name) => [name, readGeoGebraObject(api, name)]));
             const complete = typeof completion.object === "string" && compare(values[completion.object], completion);
             const raw = typeof tracking.progress_object === "string" ? Number(values[tracking.progress_object]) : 0;
             const progress = complete ? 100 : Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 0;
             const snapshot = JSON.stringify(values);
+            // The first reading is the applet's starting state, not learner
+            // progress; report it only when it already shows completion.
+            const initial = previous === null;
             if (snapshot !== previous) {
               previous = snapshot;
-              callbackRef.current(progress, { values }, complete);
+              if (!initial || complete) callbackRef.current(progress, { values }, complete);
             }
             if (complete && timer) { clearInterval(timer); timer = null; setStatus("Activity completion recorded."); }
             return complete;
@@ -153,9 +156,40 @@ function ResponseForm({ fields, state, onStateChange }: { fields: ResponseField[
   );
 }
 
+const GRAPHSPACE_PREFS_KEY = "sofiaa-graphspace";
+
+type GraphSpacePrefs = { tourSeen?: boolean; theme?: "dark" | "light" };
+
+function readGraphSpacePrefs(): GraphSpacePrefs {
+  try { return JSON.parse(localStorage.getItem(GRAPHSPACE_PREFS_KEY) || "{}") as GraphSpacePrefs; } catch { return {}; }
+}
+
 function GraphSpaceActivity({ activity, experiment, config }: { activity: Activity; experiment: NonNullable<Activity["experiment"]>; config: Record<string, unknown> }) {
   const frame = useRef<HTMLDivElement>(null);
+  const iframe = useRef<HTMLIFrameElement>(null);
   const path = typeof config.path === "string" ? config.path : "/graphspace/index_3.html";
+  const [src, setSrc] = useState<string | null>(null);
+
+  // The sandboxed frame cannot use storage, so the host remembers its tour and theme.
+  useEffect(() => {
+    const prefs = readGraphSpacePrefs();
+    const params = new URLSearchParams();
+    if (prefs.tourSeen) params.set("tour", "seen");
+    params.set("theme", prefs.theme ?? (document.documentElement.classList.contains("dark") ? "dark" : "light"));
+    setSrc(`${path}#${params}`);
+    function onMessage(event: MessageEvent) {
+      if (event.source !== iframe.current?.contentWindow) return;
+      const data = event.data as { source?: unknown; type?: unknown; value?: unknown } | null;
+      if (!data || data.source !== "graphspace") return;
+      const next = readGraphSpacePrefs();
+      if (data.type === "tour-seen") next.tourSeen = true;
+      else if (data.type === "theme" && (data.value === "dark" || data.value === "light")) next.theme = data.value;
+      else return;
+      try { localStorage.setItem(GRAPHSPACE_PREFS_KEY, JSON.stringify(next)); } catch {}
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [path]);
   const heading = typeof config.heading === "string" ? config.heading : activity.title;
   const message = typeof config.message === "string" ? config.message : experiment.instructions;
 
@@ -174,13 +208,16 @@ function GraphSpaceActivity({ activity, experiment, config }: { activity: Activi
             <Button asChild variant="ghost" size="sm"><a href={path} target="_blank" rel="noreferrer">New tab<ExternalLink data-icon="inline-end" /></a></Button>
           </div>
         </div>
-        <iframe
-          src={path}
-          title={heading}
-          loading="lazy"
-          className="h-[72svh] min-h-[620px] w-full border-0 fullscreen:h-screen"
-          sandbox="allow-scripts allow-same-origin allow-downloads allow-modals"
-        />
+        {src ? (
+          <iframe
+            ref={iframe}
+            src={src}
+            title={heading}
+            loading="lazy"
+            className="h-[72svh] min-h-[620px] w-full border-0 fullscreen:h-screen"
+            sandbox="allow-scripts allow-downloads allow-modals"
+          />
+        ) : <div className="h-[72svh] min-h-[620px] w-full animate-pulse bg-muted/40" aria-hidden="true" />}
       </div>
     </div>
   );

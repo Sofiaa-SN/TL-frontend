@@ -11,6 +11,7 @@ import { learnerApi, LearnerApiError } from "@/lib/learner/api";
 import type { CareerOpportunity } from "@/lib/learner/types";
 import type { EmploymentType, WorkplaceMode } from "@/lib/opportunities/types";
 import { EmptyState, ErrorState, LoadingState, PageHeading } from "./common";
+import { SimpleSelect } from "@/components/ui/simple-select";
 
 export function OpportunitiesView() {
   const [items, setItems] = useState<CareerOpportunity[] | null>(null);
@@ -33,8 +34,8 @@ export function OpportunitiesView() {
     <PageHeading eyebrow="Beyond the curriculum" title="Opportunities" description="Explore roles selected for your learning community and see what you need before applying." action={<Button render={<Link href="/learn/applications" />} nativeButton={false} variant="outline">My applications</Button>} />
     <section aria-label="Opportunity filters" className="grid gap-3 rounded-2xl bg-muted/65 p-3 sm:grid-cols-[1fr_12rem_12rem]">
       <label className="relative"><span className="sr-only">Search opportunities</span><Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" /><Input className="bg-background pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search roles or companies" /></label>
-      <label><span className="sr-only">Employment type</span><select className="h-9 w-full rounded-md border bg-background px-3 text-sm" value={employmentType} onChange={(event) => setEmploymentType(event.target.value as EmploymentType | "")}><option value="">All employment</option>{Object.entries(employmentLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
-      <label><span className="sr-only">Workplace mode</span><select className="h-9 w-full rounded-md border bg-background px-3 text-sm" value={workplaceMode} onChange={(event) => setWorkplaceMode(event.target.value as WorkplaceMode | "")}><option value="">All workplaces</option>{Object.entries(workplaceLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+      <SimpleSelect aria-label="Employment type" value={employmentType} onValueChange={(value) => setEmploymentType(value as EmploymentType | "")} options={[{ value: "", label: "All employment" }, ...Object.entries(employmentLabels).map(([value, label]) => ({ value, label }))]} />
+      <SimpleSelect aria-label="Workplace mode" value={workplaceMode} onValueChange={(value) => setWorkplaceMode(value as WorkplaceMode | "")} options={[{ value: "", label: "All workplaces" }, ...Object.entries(workplaceLabels).map(([value, label]) => ({ value, label }))]} />
     </section>
     {items.length === 0 ? <EmptyState title="No opportunities match" description="Try clearing your search and filters, or check again when new roles are published." action={<Button variant="outline" onClick={() => { setSearch(""); setEmploymentType(""); setWorkplaceMode(""); }}>Clear filters</Button>} /> : <div className="divide-y border-y">
       {items.map((item) => <article key={item.id} className="group grid gap-4 py-6 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:px-2">

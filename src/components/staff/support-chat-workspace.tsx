@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, CheckCircle2, MessageSquare, RefreshCcw, Search, Send, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, MessageSquare, MessagesSquare, RefreshCcw, Search, Send, XCircle } from "lucide-react";
 
 import { useAuth } from "@/components/auth-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -15,6 +15,7 @@ import { mergeSupportMessages } from "@/lib/support-chat/reducer";
 import { SupportSocketClient } from "@/lib/support-chat/socket-client";
 import type { SupportConnectionState, SupportConversation, SupportMessage, SupportServerEvent } from "@/lib/support-chat/types";
 import { cn } from "@/lib/utils";
+import { SimpleSelect } from "@/components/ui/simple-select";
 
 type PendingMessage = {
   conversationId: string;
@@ -61,6 +62,7 @@ export function SupportChatWorkspace() {
   const [threadLoading, setThreadLoading] = useState(false);
   const [nextQuery, setNextQuery] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [unavailable, setUnavailable] = useState(false);
   const socketRef = useRef<SupportSocketClient | null>(null);
   const selectedRef = useRef<string | null>(null);
   const messagesRef = useRef<Record<string, SupportMessage[]>>({});
@@ -108,8 +110,9 @@ export function SupportChatWorkspace() {
     if (!canView) { setLoading(false); return; }
     let active = true;
     setLoading(true);
+    setUnavailable(false);
     loadConversations()
-      .catch((caught) => active && setError(caught instanceof SupportApiError ? caught.message : "Could not load support conversations."))
+      .catch(() => active && setUnavailable(true))
       .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, [canView, loadConversations]);
@@ -266,14 +269,28 @@ export function SupportChatWorkspace() {
     </main>
   );
 
+  if (unavailable) return (
+    <main className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center p-6 text-center">
+      <span className="grid size-14 place-items-center rounded-2xl bg-brand-indigo-soft text-primary"><MessagesSquare className="size-6" aria-hidden="true" /></span>
+      <h1 className="mt-5 font-heading text-2xl font-semibold">Support chats aren’t available</h1>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">Course support chat may be switched off for your institution, or the service couldn’t be reached. Try again, or contact your administrator if this continues.</p>
+      <Button className="mt-6" onClick={() => window.location.reload()}>Try again</Button>
+    </main>
+  );
+
+  const filtering = Boolean(query.trim()) || status !== "ALL" || course !== "ALL" || group !== "ALL";
+
   return (
-    <main className="flex h-[calc(100vh-4rem)] min-h-[36rem] flex-col overflow-hidden">
-      <header className="flex items-center gap-4 border-b bg-background px-4 py-3 md:px-6">
+    <main className="flex h-[calc(100dvh-3.5rem)] min-h-[22rem] flex-col overflow-hidden">
+      <header className={cn("items-center gap-4 border-b bg-background px-4 py-3 md:flex md:px-6", selectedId ? "hidden" : "flex")}>
         <div>
           <h1 className="font-heading text-xl font-semibold">Course support</h1>
-          <p className="text-sm text-muted-foreground">Learner questions routed by current teaching responsibility.</p>
+          <p className="text-sm text-muted-foreground">Questions from learners in the courses you support.</p>
         </div>
-        <Badge className="ml-auto" variant={connection === "live" ? "secondary" : "outline"}>{connectionCopy[connection]}</Badge>
+        <div className="ml-auto flex items-center gap-2">
+          {connection === "offline" && <Button type="button" size="sm" variant="outline" onClick={() => socketRef.current?.reconnect()}><RefreshCcw data-icon="inline-start" />Reconnect</Button>}
+          <Badge variant={connection === "live" ? "secondary" : "outline"}>{connectionCopy[connection]}</Badge>
+        </div>
       </header>
       {error ? <Alert variant="destructive" className="m-4 mb-0 md:mx-6" role="alert"><AlertDescription>{error}</AlertDescription></Alert> : null}
       <div className="flex min-h-0 flex-1">
@@ -284,13 +301,13 @@ export function SupportChatWorkspace() {
               <Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-8" placeholder="Search learner or course" aria-label="Search chats" />
             </label>
             <div className="grid grid-cols-3 gap-2">
-              <select aria-label="Filter by status" value={status} onChange={(event) => setStatus(event.target.value)} className="h-8 rounded-lg border bg-background px-2 text-xs"><option value="ALL">All status</option><option value="OPEN">Open</option><option value="CLOSED">Closed</option></select>
-              <select aria-label="Filter by course" value={course} onChange={(event) => setCourse(event.target.value)} className="h-8 rounded-lg border bg-background px-2 text-xs"><option value="ALL">All courses</option>{courses.map((item) => <option key={item.id} value={item.id}>{item.code}</option>)}</select>
-              <select aria-label="Filter by group" value={group} onChange={(event) => setGroup(event.target.value)} className="h-8 rounded-lg border bg-background px-2 text-xs"><option value="ALL">All groups</option>{groups.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+              <SimpleSelect aria-label="Filter by status" size="sm" className="text-xs" value={status} onValueChange={setStatus} options={[{ value: "ALL", label: "All status" }, { value: "OPEN", label: "Open" }, { value: "CLOSED", label: "Closed" }]} />
+              <SimpleSelect aria-label="Filter by course" size="sm" className="text-xs" value={course} onValueChange={setCourse} options={[{ value: "ALL", label: "All courses" }, ...courses.map((item) => ({ value: item.id, label: item.code }))]} />
+              <SimpleSelect aria-label="Filter by group" size="sm" className="text-xs" value={group} onValueChange={setGroup} options={[{ value: "ALL", label: "All groups" }, ...groups.map((item) => ({ value: item.id, label: item.name }))]} />
             </div>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
-            {filtered.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">No conversations match these filters.</p> : null}
+            {filtered.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">{filtering ? "No conversations match these filters." : "No learner questions yet. New conversations will appear here."}</p> : null}
             {filtered.map((item) => (
               <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className={cn("w-full border-b p-4 text-left transition-colors hover:bg-muted/60", selectedId === item.id && "bg-muted")} aria-pressed={selectedId === item.id} aria-label={`Open conversation with ${displayName(item.student)}`}>
                 <div className="flex items-start gap-3">

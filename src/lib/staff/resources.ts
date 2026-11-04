@@ -23,6 +23,8 @@ export type StaffFieldDefinition = {
   nullable?: boolean;
   defaultValue?: unknown;
   help?: string;
+  /** Structured form editor for a JSON field; raw JSON stays available inside it. */
+  editor?: "activity-content" | "experiment" | "captions";
   options?: FieldOption[];
   relation?: RelationDefinition;
 };
@@ -213,11 +215,11 @@ export const staffResources: Record<string, StaffResourceDefinition> = {
       },
       {
         key: "content",
-        label: "Content JSON",
+        label: "Learner content",
         type: "json",
+        editor: "activity-content",
         defaultValue: {},
         required: true,
-        help: "Use a valid JSON object understood by the learner renderer.",
       },
     ],
     columns: [
@@ -270,8 +272,9 @@ export const staffResources: Record<string, StaffResourceDefinition> = {
       { key: "transcript", label: "Transcript", type: "textarea" },
       {
         key: "captions",
-        label: "Captions JSON",
+        label: "Captions",
         type: "json",
+        editor: "captions",
         defaultValue: [],
       },
       {
@@ -327,8 +330,9 @@ export const staffResources: Record<string, StaffResourceDefinition> = {
       },
       {
         key: "configuration",
-        label: "Configuration JSON",
+        label: "Experiment setup",
         type: "json",
+        editor: "experiment",
         defaultValue: {},
         required: true,
       },
@@ -707,7 +711,7 @@ export const staffResources: Record<string, StaffResourceDefinition> = {
     title: "External mappings",
     singular: "external mapping",
     description:
-      "Connect Tella accounts to Moodle, Canvas, or mobile identities.",
+      "Connect Sofiaa accounts to Moodle, Canvas, or mobile identities.",
     endpoint: "external-user-mappings",
     viewPermission: "students.view_externalusermapping",
     addPermission: "students.add_externalusermapping",

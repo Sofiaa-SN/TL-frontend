@@ -1,5 +1,4 @@
-import { CourseChatbot } from "@/components/learner/course-chatbot";
-import { CourseSupportChat } from "@/components/learner/course-support-chat";
+import { CourseHelp } from "@/components/learner/course-help";
 
 export default async function LearnerCourseLayout({
   children,
@@ -9,5 +8,10 @@ export default async function LearnerCourseLayout({
   params: Promise<{ courseId: string }>;
 }) {
   const { courseId } = await params;
-  return <>{children}<CourseSupportChat courseId={courseId} /><CourseChatbot courseId={courseId} /></>;
+  return (
+    <>
+      {children}
+      <CourseHelp key={courseId} courseId={courseId} />
+    </>
+  );
 }

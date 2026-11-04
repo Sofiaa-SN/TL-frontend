@@ -519,22 +519,24 @@
   </div>
 </div>
 
-<script src="vendor/three.min.js"></script>
-<script src="vendor/math.js"></script>
-<script src="js/00_config.js"></script>
-<script src="js/01_utils.js"></script>
-<script src="js/02_engine_math.js"></script>
-<script src="js/03_engine_marching.js"></script>
-<script src="js/04_engine_geometry.js"></script>
-<script src="js/05_engine_renderer.js"></script>
-<script src="js/06_ui_state.js"></script>
-<script src="js/07_ui_sidebar.js"></script>
-<script src="js/08_ui_colorpicker.js"></script>
-<script src="js/09_ui_viewport.js"></script>
-<script src="js/10_ui_export.js"></script>
-<script src="js/11_main.js"></script>
-<script src="js/12_ui_geometry2d.js"></script>
-<script src="js/13_ui_dashboard.js"></script>
-<script src="js/14_ui_tour.js"></script>
+<!-- three r160+ ships only as ES modules; expose it as the global the classic scripts expect.
+     Module scripts run in document order with the deferred scripts below. -->
+<script type="module">import * as THREE from "./vendor/three/three.module.min.js?v=r180"; window.THREE = THREE;</script>
+<script defer src="vendor/math.js?v=15.2.0"></script>
+<script defer src="js/00_config.js"></script>
+<script defer src="js/01_utils.js"></script>
+<script defer src="js/02_engine_math.js"></script>
+<script defer src="js/03_engine_marching.js"></script>
+<script defer src="js/04_engine_geometry.js"></script>
+<script defer src="js/05_engine_renderer.js"></script>
+<script defer src="js/06_ui_state.js"></script>
+<script defer src="js/07_ui_sidebar.js"></script>
+<script defer src="js/08_ui_colorpicker.js"></script>
+<script defer src="js/09_ui_viewport.js"></script>
+<script defer src="js/10_ui_export.js"></script>
+<script defer src="js/11_main.js"></script>
+<script defer src="js/12_ui_geometry2d.js"></script>
+<script defer src="js/13_ui_dashboard.js"></script>
+<script defer src="js/14_ui_tour.js"></script>
 </body>
 </html>

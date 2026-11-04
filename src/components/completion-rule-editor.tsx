@@ -6,7 +6,7 @@ import { StructuredJsonEditor } from "@/components/structured-json-editor";
 import { setObjectKeys, type JsonObject } from "@/lib/structured-json";
 
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  return <label className="flex min-h-10 items-center gap-3 text-sm"><input className="size-4 accent-emerald-800" type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)} />{label}</label>;
+  return <label className="flex min-h-10 items-center gap-3 text-sm"><input className="size-4 accent-primary" type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)} />{label}</label>;
 }
 
 export function ChapterCompletionEditor({ value, onChange, onValidityChange }: { value: JsonObject; onChange: (value: JsonObject) => void; onValidityChange?: (valid: boolean) => void }) {

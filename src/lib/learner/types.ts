@@ -120,6 +120,7 @@ export type AssessmentAttempt = {
   score: string | number | null;
   max_score: string | number;
   percentage: string | number | null;
+  review?: { question: UUID; is_correct: boolean; marks_awarded: string | number; explanation: string }[] | null;
   status: string;
   passed: boolean | null;
   started_at: string;

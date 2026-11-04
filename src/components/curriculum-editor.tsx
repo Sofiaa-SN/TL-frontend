@@ -10,9 +10,10 @@ import {
 } from "react";
 import {
   ArrowLeft,
+  ArrowDown,
+  ArrowUp,
   ChevronDown,
   ChevronRight,
-  ChevronUp,
   FileText,
   Plus,
   Save,
@@ -59,6 +60,8 @@ import type {
   UUID,
 } from "@/lib/curriculum/types";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { toast } from "@/components/ui/toast";
 import { useAuth } from "./auth-provider";
 import { CourseChatbotPanel } from "./course-chatbot-panel";
 const statuses: Status[] = [
@@ -149,6 +152,7 @@ export function CurriculumEditor({ courseId }: { courseId: string }) {
   const [error, setError] = useState("");
   const [dirty, setDirty] = useState(false);
   const [mobileInspector, setMobileInspector] = useState(false);
+  const [confirmDiscard, discardDialog] = useConfirm();
   const { user } = useAuth();
   const permissions = user?.permissions ?? [];
   const canAdd = (kind: ResourceKind) =>
@@ -191,8 +195,18 @@ export function CurriculumEditor({ courseId }: { courseId: string }) {
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
-  function choose(next: Selection) {
-    if (dirty && !confirm("Discard unsaved changes?")) return;
+  async function choose(next: Selection) {
+    if (
+      dirty &&
+      !(await confirmDiscard({
+        title: "Discard unsaved changes?",
+        description: "You have edits that haven’t been saved. Leaving this item will lose them.",
+        confirmLabel: "Discard changes",
+        cancelLabel: "Keep editing",
+        destructive: true,
+      }))
+    )
+      return;
     setDirty(false);
     setSelection(next);
     setNewItem(null);
@@ -244,6 +258,7 @@ export function CurriculumEditor({ courseId }: { courseId: string }) {
     );
   return (
     <main className="min-h-[calc(100vh-4rem)]">
+      {discardDialog}
       <header className="flex items-center gap-4 border-b bg-background px-4 py-4 md:px-7">
         <Button
           render={<Link href="/courses" aria-label="Back to courses" />}
@@ -254,13 +269,18 @@ export function CurriculumEditor({ courseId }: { courseId: string }) {
           <ArrowLeft />
         </Button>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{course.name}</p>
-          <p className="text-[10px] text-muted-foreground">
+          <h1 className="truncate font-heading text-lg font-semibold tracking-tight">{course.name}</h1>
+          <p className="text-xs text-muted-foreground">
             {course.program_name} · {course.code}
           </p>
         </div>
-        <span className="ml-auto text-xs font-medium text-muted-foreground">
-          {course.status}
+        <span
+          className={cn(
+            "ml-auto rounded-full px-2.5 py-1 text-xs font-semibold",
+            course.status === "PUBLISHED" ? "bg-brand-teal-soft text-brand-teal-strong" : "bg-muted text-muted-foreground",
+          )}
+        >
+          {course.status.charAt(0) + course.status.slice(1).toLowerCase()}
         </span>
       </header>
       {error && (
@@ -278,9 +298,9 @@ export function CurriculumEditor({ courseId }: { courseId: string }) {
         >
           <div className="mb-5 flex min-w-0 items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-lg font-semibold tracking-tight">
+              <h2 className="text-base font-semibold tracking-tight">
                 Course structure
-              </h1>
+              </h2>
               <p className="mt-1 text-xs text-muted-foreground">
                 Select an item to edit it.
               </p>
@@ -541,8 +561,8 @@ function TreeRow({
     <div className="min-w-0">
       <div
         className={cn(
-          "group flex min-w-0 max-w-full items-center rounded-lg",
-          active ? "bg-primary/10 text-foreground" : "hover:bg-muted/60",
+          "group relative flex min-w-0 max-w-full items-center rounded-lg",
+          active ? "bg-brand-indigo-soft text-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-1 before:rounded-full before:bg-brand-teal" : "hover:bg-muted/60",
         )}
         style={{ paddingInlineStart: depth * 8 }}
       >
@@ -572,10 +592,12 @@ function TreeRow({
         <button
           type="button"
           onClick={onClick}
-          className="min-w-0 flex-1 px-2 py-2 text-left"
+          title={title}
+          aria-current={active ? "true" : undefined}
+          className="min-w-0 flex-1 rounded-md px-2 py-2 text-left"
         >
-          <span className="block truncate text-xs font-medium">{title}</span>
-          <span className="block truncate text-[9px] uppercase tracking-wide text-muted-foreground">
+          <span className={cn("block truncate text-sm", active ? "font-semibold text-primary" : "font-medium")}>{title}</span>
+          <span className="block truncate text-xs text-muted-foreground">
             {meta}
           </span>
         </button>
@@ -589,7 +611,7 @@ function TreeRow({
                 disabled={!onUp}
                 aria-label={`Move ${title} up`}
               >
-                <ChevronUp />
+                <ArrowUp />
               </Button>
               <Button
                 size="icon"
@@ -598,7 +620,7 @@ function TreeRow({
                 disabled={!onDown}
                 aria-label={`Move ${title} down`}
               >
-                <ChevronDown />
+                <ArrowDown />
               </Button>
             </>
           )}
@@ -829,6 +851,7 @@ function Inspector({
   onError: (v: string) => void;
 }) {
   const initial = JSON.stringify(resource);
+  const [confirm, confirmDialog] = useConfirm();
   const [version, setVersion] = useState(0);
   const [status, setStatus] = useState<Status>(resource.status);
   const isActivity = selection.kind === "activity";
@@ -906,6 +929,7 @@ function Inspector({
           });
         }
       }
+      toast.success("Changes saved.");
       onSaved();
     } catch (x) {
       onError(
@@ -919,13 +943,25 @@ function Inspector({
   }
   async function remove() {
     if (!canEdit) return;
-    if (!confirm(`Delete this ${selection.kind}? This cannot be undone.`))
-      return;
+    const name = "name" in resource ? resource.name : resource.title;
+    const children =
+      selection.kind === "chapter" ? " Its subtopics and activities are deleted too."
+        : selection.kind === "subtopic" ? " Its activities are deleted too."
+          : selection.kind === "version" ? " All of its chapters, subtopics and activities are deleted too."
+            : "";
+    const confirmed = await confirm({
+      title: `Delete “${name}”?`,
+      description: `This permanently removes the ${selection.kind}.${children} This can’t be undone.`,
+      confirmLabel: `Delete ${selection.kind}`,
+      destructive: true,
+    });
+    if (!confirmed) return;
     try {
       await curriculumApi.remove(
         resourceEndpoint[selection.kind],
         selection.id,
       );
+      toast.success(`Deleted “${name}”.`);
       onDeleted();
     } catch (x) {
       onError(
@@ -934,12 +970,15 @@ function Inspector({
     }
   }
   async function publish() {
-    if (
-      !confirm("Publish this course version? Students may gain access to it.")
-    )
-      return;
+    const confirmed = await confirm({
+      title: "Publish this course version?",
+      description: "Learners enrolled in this version will be able to open it straight away. Learners on earlier versions stay where they are.",
+      confirmLabel: "Publish version",
+    });
+    if (!confirmed) return;
     try {
       await curriculumApi.publish(course.id, resource.id);
+      toast.success("Version published.");
       onSaved();
     } catch (x) {
       onError(x instanceof ApiError ? x.message : "Publication was blocked.");
@@ -960,10 +999,18 @@ function Inspector({
           <h2 className="mt-2 text-2xl font-semibold tracking-tight">
             {"name" in resource ? resource.name : resource.title}
           </h2>
-          <p className="mt-1 text-xs text-muted-foreground">ID {resource.id}</p>
         </div>
-        <span className="text-xs font-medium text-muted-foreground">
-          {resource.status}
+        <span
+          className={cn(
+            "rounded-full px-2.5 py-1 text-xs font-semibold",
+            resource.status === "PUBLISHED"
+              ? "bg-brand-teal-soft text-brand-teal-strong"
+              : resource.status === "ARCHIVED"
+                ? "bg-muted text-muted-foreground"
+                : "bg-warning/15 text-warning-foreground dark:text-warning",
+          )}
+        >
+          {resource.status.charAt(0) + resource.status.slice(1).toLowerCase()}
         </span>
       </div>
       {!canEdit && (
@@ -1117,19 +1164,8 @@ function Inspector({
           )}
         </FieldGroup>
       </FieldSet>
-      <div
-        className={cn(
-          "flex flex-wrap gap-3",
-          canEdit ? "justify-between" : "justify-end",
-        )}
-      >
-        {canEdit && (
-          <Button type="button" variant="destructive" onClick={remove}>
-            <Trash2 data-icon="inline-start" />
-            Delete
-          </Button>
-        )}
-        <div className="flex gap-2">
+      <div className="flex flex-wrap justify-end gap-3">
+        <div className="flex flex-wrap gap-2">
           {canEdit && (
             <Button
               type="button"
@@ -1159,6 +1195,19 @@ function Inspector({
           )}
         </div>
       </div>
+      {canEdit && (
+        <section aria-label="Danger zone" className="flex flex-col gap-3 rounded-xl border border-destructive/25 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold">Delete this {selection.kind}</p>
+            <p className="text-xs text-muted-foreground">Removes it permanently, including anything inside it.</p>
+          </div>
+          <Button type="button" variant="destructive" onClick={remove} className="w-fit">
+            <Trash2 data-icon="inline-start" />
+            Delete {selection.kind}
+          </Button>
+        </section>
+      )}
+      {confirmDialog}
       <p className="sr-only" aria-live="polite">
         Editing {selection.kind}
       </p>

@@ -109,6 +109,8 @@ function CourseOutline({ data, activityId, mobile = false, alwaysCollapsible = f
   );
 }
 
+const TRACKED_SAVE_INTERVAL_MS = 5000;
+
 export function LearnerActivityView({ courseId, activityId }: { courseId: string; activityId: string }) {
   const router = useRouter();
   const [data, setData] = useState<ActivityData | null>(null);
@@ -120,6 +122,7 @@ export function LearnerActivityView({ courseId, activityId }: { courseId: string
   const [saving, setSaving] = useState(false);
   const startedActivity = useRef<string | null>(null);
   const openedAt = useRef(0);
+  const lastTrackedSave = useRef(0);
 
   const load = useCallback(async () => {
     setError("");
@@ -159,8 +162,12 @@ export function LearnerActivityView({ courseId, activityId }: { courseId: string
     }).catch((caught) => setActionError(caught instanceof LearnerApiError ? caught.message : "Progress tracking could not be started."));
   }, [activity, currentProgress]);
 
+  // Time is sent as a delta since the previous save; the server adds it up.
   function elapsedSeconds() {
-    return Math.max(0, Math.round((Date.now() - openedAt.current) / 1000));
+    const now = Date.now();
+    const seconds = Math.max(0, Math.round((now - openedAt.current) / 1000));
+    openedAt.current = now;
+    return seconds;
   }
 
   const updateProgress = useCallback((row: ActivityProgress) => {
@@ -200,13 +207,19 @@ export function LearnerActivityView({ courseId, activityId }: { courseId: string
       },
     };
     setActivityState(experimentState);
+    // Completed activities stay complete; only a fresh completion is worth a write.
+    if (!completeTracked && isComplete(currentProgress)) return;
+    // Interactive applets report on every change; sync at most every few seconds.
+    const now = Date.now();
+    if (!completeTracked && now - lastTrackedSave.current < TRACKED_SAVE_INTERVAL_MS) return;
+    lastTrackedSave.current = now;
     try {
       const row = completeTracked
         ? await learnerApi.completeActivity(activity.id, { time_spent_seconds: elapsedSeconds(), metadata: experimentState })
         : await learnerApi.saveActivity(activity.id, { progress_percentage: percentage, time_spent_seconds: elapsedSeconds(), metadata: experimentState });
       updateProgress(row);
     } catch { setActionError("Interactive progress is waiting to sync. Check your connection."); }
-  }, [activity, activityState, updateProgress]);
+  }, [activity, activityState, currentProgress, updateProgress]);
 
   if (!data && !error) return <LoadingState label="Loading this activity…" />;
   if (error) return <ErrorState message={error} onRetry={() => void load()} />;

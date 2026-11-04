@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { learnerApi } from "@/lib/learner/api";
 import { learnerOpportunity } from "@/test/opportunity-fixtures";
 import { OpportunitiesView } from "./opportunities-view";
+import { chooseOption } from "@/test/choose-option";
 
 vi.mock("@/lib/learner/api", () => ({ learnerApi: { opportunities: vi.fn() }, LearnerApiError: class extends Error {} }));
 
@@ -27,8 +28,8 @@ describe("OpportunitiesView", () => {
     render(<OpportunitiesView />);
     await screen.findByText("No opportunities match");
     fireEvent.change(screen.getByLabelText("Search opportunities"), { target: { value: "design" } });
-    fireEvent.change(screen.getByLabelText("Employment type"), { target: { value: "INTERNSHIP" } });
-    fireEvent.change(screen.getByLabelText("Workplace mode"), { target: { value: "REMOTE" } });
+    await chooseOption("Employment type", "Internship");
+    await chooseOption("Workplace mode", "Remote");
     await waitFor(() => expect(learnerApi.opportunities).toHaveBeenLastCalledWith({ search: "design", employment_type: "INTERNSHIP", workplace_mode: "REMOTE" }));
   });
 

@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/curriculum/api";
 import { staffOpportunityApi } from "@/lib/opportunities/staff-api";
 import type { EmploymentType, OpportunityLifecycle, StaffOpportunity, WorkplaceMode } from "@/lib/opportunities/types";
+import { SimpleSelect } from "@/components/ui/simple-select";
 
 export function OpportunityList() {
   const { user, loading: authLoading } = useAuth();
@@ -49,9 +50,9 @@ export function OpportunityList() {
 
       <section aria-label="Opportunity filters" className="grid gap-3 border-y py-4 md:grid-cols-[minmax(14rem,1fr)_repeat(3,minmax(9rem,auto))]">
         <label className="relative"><span className="sr-only">Search opportunities</span><Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search title, company, summary" className="pl-9" /></label>
-        <label><span className="sr-only">Employment type</span><select className="h-9 w-full rounded-md border bg-background px-3 text-sm" value={employmentType} onChange={(event) => setEmploymentType(event.target.value as EmploymentType | "")}><option value="">All employment</option>{Object.entries(employmentLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        <label><span className="sr-only">Workplace mode</span><select className="h-9 w-full rounded-md border bg-background px-3 text-sm" value={workplaceMode} onChange={(event) => setWorkplaceMode(event.target.value as WorkplaceMode | "")}><option value="">All workplaces</option>{Object.entries(workplaceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        <label><span className="sr-only">Lifecycle status</span><select className="h-9 w-full rounded-md border bg-background px-3 text-sm" value={lifecycle} onChange={(event) => setLifecycle(event.target.value as OpportunityLifecycle | "")}><option value="">All statuses</option><option value="DRAFT">Draft</option><option value="PUBLISHED">Published</option><option value="CLOSED">Closed</option><option value="ARCHIVED">Archived</option></select></label>
+        <SimpleSelect aria-label="Employment type" value={employmentType} onValueChange={(value) => setEmploymentType(value as EmploymentType | "")} options={[{ value: "", label: "All employment" }, ...Object.entries(employmentLabels).map(([value, label]) => ({ value, label }))]} />
+        <SimpleSelect aria-label="Workplace mode" value={workplaceMode} onValueChange={(value) => setWorkplaceMode(value as WorkplaceMode | "")} options={[{ value: "", label: "All workplaces" }, ...Object.entries(workplaceLabels).map(([value, label]) => ({ value, label }))]} />
+        <SimpleSelect aria-label="Lifecycle status" value={lifecycle} onValueChange={(value) => setLifecycle(value as OpportunityLifecycle | "")} options={[{ value: "", label: "All statuses" }, { value: "DRAFT", label: "Draft" }, { value: "PUBLISHED", label: "Published" }, { value: "CLOSED", label: "Closed" }, { value: "ARCHIVED", label: "Archived" }]} />
       </section>
 
       {error ? <Alert variant="destructive"><AlertTitle>Could not load opportunities</AlertTitle><AlertDescription className="flex items-center justify-between gap-3">{error}<Button variant="outline" size="sm" onClick={() => void load()}>Retry</Button></AlertDescription></Alert> : items === null ? <div className="space-y-3" role="status"><Skeleton className="h-24" /><Skeleton className="h-24" /><span className="sr-only">Loading opportunities</span></div> : items.length === 0 ? <div className="py-16 text-center"><h2 className="text-lg font-semibold">No opportunities match</h2><p className="mt-2 text-sm text-muted-foreground">Clear the filters or create a new draft.</p><Button className="mt-5" variant="outline" onClick={() => { setSearch(""); setEmploymentType(""); setWorkplaceMode(""); setLifecycle(""); }}>Clear filters</Button></div> : (

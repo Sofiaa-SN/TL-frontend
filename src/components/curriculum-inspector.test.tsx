@@ -19,8 +19,9 @@ function view() { return render(<CurriculumInspector course={course} selection={
 describe("CurriculumInspector", () => {
   it("does not mutate either endpoint with unapplied raw JSON", async () => {
     const user = userEvent.setup(); view();
+    await user.click(screen.getByRole("radio", { name: "Advanced" }));
     const advanced = screen.getAllByRole("button", { name: "Advanced JSON" }); await user.click(advanced[1]);
-    fireEvent.change(screen.getByLabelText("Structured activity content raw JSON"), { target: { value: "{" } });
+    fireEvent.change(screen.getByLabelText("Content data raw JSON"), { target: { value: "{" } });
     await user.click(screen.getByRole("button", { name: "Save changes" }));
     expect(api.update).not.toHaveBeenCalled(); expect(api.saveContent).not.toHaveBeenCalled(); expect(screen.getByText(/Apply or reset/)).toBeDefined();
   });

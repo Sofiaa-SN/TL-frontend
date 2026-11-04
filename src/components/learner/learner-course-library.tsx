@@ -55,9 +55,6 @@ export function LearnerCourseLibrary() {
           <p className="text-sm text-muted-foreground">
             Showing <span className="font-medium tabular-nums text-foreground">{filtered.length}</span> of <span className="font-medium tabular-nums text-foreground">{courses.length}</span>
           </p>
-          <span className="text-xs font-medium text-muted-foreground">
-            Published curriculum
-          </span>
         </div>
       </div>
 

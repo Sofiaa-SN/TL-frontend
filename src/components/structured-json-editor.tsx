@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { defaultForType, isJsonObject, jsonType, moveArrayItem, moveObjectKey, parseJsonObject, removeAtPath, updateAtPath, type JsonObject, type JsonValue } from "@/lib/structured-json";
+import { SimpleSelect } from "@/components/ui/simple-select";
 
 const valueTypes = ["string", "number", "boolean", "null", "object", "array"];
 
@@ -94,7 +95,7 @@ function JsonNode({ value, path, label, root, onRootChange, depth }: { value: Js
 }
 
 function TypeSelect({ label, value, onChange }: { label: string; value: JsonValue; onChange: (value: JsonValue) => void }) {
-  return <select className="h-8 w-full rounded-lg border bg-background px-2 text-xs" aria-label={`${label} value type`} value={jsonType(value)} onChange={event => onChange(defaultForType(event.target.value))}>{valueTypes.map(type => <option key={type}>{type}</option>)}</select>;
+  return <SimpleSelect size="sm" className="text-xs" aria-label={`${label} value type`} value={jsonType(value)} onValueChange={type => onChange(defaultForType(type))} options={valueTypes.map(type => ({ value: type, label: type }))} />;
 }
 
 function PrimitiveInput({ id, label, value, onChange }: { id: string; label: string; value: JsonValue; onChange: (value: JsonValue) => void }) {
